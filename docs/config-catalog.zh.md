@@ -1711,12 +1711,18 @@ export interface Config {
 ## `@deepseek-ai/dsh-llm-deepseek-account`
 
 - `inject`: `llm`
-- `refs`: [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts)
-- `source`: [`packages/llm/llm-deepseek-account/src/config.ts:5`](../packages/llm/llm-deepseek-account/src/config.ts)
+- `refs`: [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/llm/llm-deepseek-account/src/config.ts:8`](../packages/llm/llm-deepseek-account/src/config.ts)
 
 ```ts config-catalog
 /** Account route configuration; authentication comes exclusively from the account service. */
-export type Config = ProtocolConfig
+export interface Config extends ProtocolConfig {
+  /**
+   * Request header carrying the account token: `x-dsh-auth-token` (default) sends the token
+   * verbatim as `x-dsh-auth-token`; `bearer` sends `Authorization: Bearer <token>`.
+   */
+  authScheme: Volatile<'x-dsh-auth-token' | 'bearer' | undefined>
+}
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account -->
 
@@ -2297,6 +2303,75 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-office-to-pdf -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-oidc-account -->
+<a id="deepseek-aidsh-oidc-account"></a>
+
+## `@deepseek-ai/dsh-oidc-account`
+
+- `inject`: `credentials` · `authorization`
+- `source`: [`packages/credentials/oidc-account/src/index.ts:16`](../packages/credentials/oidc-account/src/index.ts)
+
+```ts config-catalog
+/** Deployment-specific OIDC SSO configuration. */
+export interface Config {
+  /** OIDC issuer origin; discovery reads `{issuer}/.well-known/openid-configuration`. */
+  issuer?: string
+  /** User-facing name of the SSO shown by generic authorization surfaces. */
+  displayName?: string
+  /** Public client identifier registered at the SSO. */
+  clientId?: string
+  /** Optional confidential-client secret; desktop deployments normally leave this empty. */
+  clientSecret?: string
+  /** How clientSecret authenticates token requests (default `basic`). */
+  clientSecretAuth?: 'basic' | 'post'
+  /** Requested scope string (default `openid profile email offline_access`). */
+  scope?: string
+  /** Read `.well-known/openid-configuration` for endpoints not configured explicitly (default true). */
+  discovery?: boolean
+  /** Explicit authorization endpoint; wins over discovery. */
+  authorizationEndpoint?: string
+  /** Explicit token endpoint; wins over discovery. */
+  tokenEndpoint?: string
+  /** Explicit userinfo endpoint; wins over discovery. */
+  userinfoEndpoint?: string
+  /** Explicit RFC 7009 revocation endpoint; wins over discovery. */
+  revocationEndpoint?: string
+  /** Explicit end-session endpoint; wins over discovery. */
+  endSessionEndpoint?: string
+  /** Exact HTTP(S) origin allowed to receive account tokens for inference and files. */
+  inferenceOrigin?: string
+  /** Allow HTTP only on loopback for a development IdP. */
+  allowLoopbackHttp?: boolean
+  /** Account console link shown in the account UI; defaults to `{issuer}/usage`. */
+  usageUrl?: string
+  /** Account top-up link shown in the account UI; defaults to `{issuer}/top_up`. */
+  topUpUrl?: string
+  /** userinfo claim carrying the stable account id (default `sub`). */
+  claimId?: string
+  /** userinfo claim carrying the display name (default `nickname`, falling back to `username`). */
+  claimName?: string
+  /** userinfo claim carrying the contact (default `email`, falling back to `mobile`). */
+  claimContact?: string
+  /** userinfo claim carrying the avatar URL (default `picture`). */
+  claimAvatar?: string
+  /** Host-only headers sent exclusively to the SSO origin; authorization headers cannot be overridden. */
+  requestHeaders?: Record<string, string>
+  /** Deadline for each SSO HTTP request. */
+  requestTimeoutMs?: number
+  /** Upper bound for the entire local attempt. */
+  attemptTimeoutMs?: number
+  /** Additional revocation attempts after the first request fails, at most five. */
+  logoutMaxRetries?: number
+  /** Delay before the first revocation retry; each later delay doubles. */
+  logoutRetryDelayMs?: number
+  /** Access tokens this close to expiry are refreshed before use (default one minute). */
+  refreshMarginMs?: number
+  /** Native desktop identity for SSO requests; null identifies the client as web. */
+  desktopPlatform?: 'darwin' | 'win32' | null
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-oidc-account -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-permission-presets -->
 <a id="deepseek-aidsh-permission-presets"></a>
