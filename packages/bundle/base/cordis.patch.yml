@@ -116,14 +116,13 @@
     # Fork: the account provider is the in-repo OIDC SSO implementation, pointed at
     # the deployment's own identity platform and inference gateway. Upstream's
     # `@deepseek-ai/dsh-deepseek-account-platform` remains available; swap the name
-    # back to restore it. `clientId` is a deployment placeholder — set it in the
-    # profile patch before shipping.
+    # back to restore it. `clientId` is the public PKCE client registered at the hub.
     - id: deepseek-account
       name: '@deepseek-ai/dsh-oidc-account'
       config:
         issuer: 'https://hub.puresnake.com'
         displayName: PureHub
-        clientId: ''
+        clientId: 'pure-harness'
         inferenceOrigin: 'https://hub.puresnake.com'
         desktopPlatform: !!js "ctx.get('profileContext')?.name === 'desktop' && ['darwin', 'win32'].includes(process.platform) ? process.platform : null"
 
