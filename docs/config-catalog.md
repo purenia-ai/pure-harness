@@ -2017,6 +2017,33 @@ export type PiAiThinkingTokenBudgetField = NonNullable<OpenAICompletionsCompat['
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai-account -->
+<a id="deepseek-aidsh-llm-pi-ai-account"></a>
+
+## `@deepseek-ai/dsh-llm-pi-ai-account`
+
+- `inject`: `llm`
+- `refs`: [`PiAiProviderProfile`](../packages/llm/llm-pi-ai/src/index.ts) · `Volatile` (`@deepseek-ai/cosmokit`)
+- `source`: [`packages/llm/llm-pi-ai-account/src/index.ts:45`](../packages/llm/llm-pi-ai-account/src/index.ts)
+
+```ts config-catalog
+/**
+ * Deployment-owned route table. The shape is the generic pi-ai plugin's
+ * `providers` dict restricted to the knobs a static, account-authenticated
+ * route needs; credential references (`apiKeyEnv`) are deliberately absent —
+ * authentication here always comes from the account service.
+ */
+export interface Config {
+  /**
+   * Account-authenticated pi-ai provider routes, keyed by provider. Each
+   * route must name its own `baseURL`: the account service validates the
+   * request origin before handing out a token.
+   */
+  providers: Volatile<Record<string, PiAiProviderProfile>>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai-account -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-replay -->
 <a id="deepseek-aidsh-llm-replay"></a>
 

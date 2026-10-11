@@ -35,6 +35,7 @@ flowchart TD
     pkg_llm_deepseek_account["llm-deepseek-account"]
     pkg_llm_deepseek_api_key["llm-deepseek-api-key"]
     pkg_llm_pi_ai["llm-pi-ai"]
+    pkg_llm_pi_ai_account["llm-pi-ai-account"]
     pkg_llm_retry["llm-retry"]
     pkg_plugin_package_inventory_deepseek["plugin-package-inventory-deepseek"]
     pkg_token_meter["token-meter"]
@@ -706,6 +707,10 @@ flowchart TD
   pkg_llm_deepseek_account --> pkg_launch_environment
   pkg_llm_deepseek_account --> pkg_llm
   pkg_llm_deepseek_account --> pkg_llm_deepseek
+  pkg_llm_pi_ai_account --> pkg_credentials
+  pkg_llm_pi_ai_account --> pkg_deepseek_account
+  pkg_llm_pi_ai_account --> pkg_llm
+  pkg_llm_pi_ai_account --> pkg_llm_pi_ai
   pkg_tools --> pkg_agent
   pkg_tools --> pkg_llm
   pkg_tools --> pkg_ptc_runtime
@@ -1656,6 +1661,7 @@ flowchart TD
 | [`loader-smoke`](../packages/test-support/loader-smoke) | `test-support` | [`agent`](../packages/core/agent), [`http-proxy`](../packages/util/http-proxy), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
 | [`workflow`](../packages/workflow/workflow) | `workflow` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
 | [`llm-deepseek-account`](../packages/llm/llm-deepseek-account) | `llm` | [`deepseek-account`](../packages/credentials/deepseek-account), [`launch-environment`](../packages/util/launch-environment), [`llm`](../packages/llm/llm), [`llm-deepseek`](../packages/llm/llm-deepseek) |
+| [`llm-pi-ai-account`](../packages/llm/llm-pi-ai-account) | `llm` | [`credentials`](../packages/credentials/credentials), [`deepseek-account`](../packages/credentials/deepseek-account), [`llm`](../packages/llm/llm), [`llm-pi-ai`](../packages/llm/llm-pi-ai) |
 | [`tools`](../packages/core/tools) | `core` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime), [`sandbox`](../packages/sandbox/sandbox), [`sandbox-policy`](../packages/sandbox/sandbox-policy), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`system-prompt`](../packages/core/system-prompt), [`user-approval`](../packages/interaction/user-approval), [`working-directory`](../packages/session/working-directory) |
 | [`command-goal`](../packages/goal/command-goal) | `goal` | [`commands`](../packages/interaction/commands), [`goal`](../packages/goal/goal), [`llm`](../packages/llm/llm) |
 | [`goal-round-driver`](../packages/goal/goal-round-driver) | `goal` | [`agent`](../packages/core/agent), [`goal`](../packages/goal/goal), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
