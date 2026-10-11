@@ -225,6 +225,12 @@ describe('initProfile', () => {
 })
 
 describe('manifest round-trip', () => {
+  it('reads a UTF-8 BOM-prefixed profile manifest', () => {
+    const dir = tmp()
+    writeFileSync(join(dir, 'package.json'), '\uFEFF{"name":"bom-profile"}\n')
+    expect(readProfileManifest('t', dir).name).toBe('bom-profile')
+  })
+
   it('writes and reads back, and fails loud on a broken manifest', () => {
     const dir = tmp()
     writeProfileManifest(dir, { name: 'p', dsh: { profile: { bundles: ['a'] } } })
