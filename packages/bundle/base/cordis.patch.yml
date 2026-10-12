@@ -85,7 +85,8 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
+        # Fork: default to the account route so a signed-in deployment works out of the box.
+        provider: deepseek-account
         model: deepseek-flash
 
     - id: jobs
@@ -112,9 +113,17 @@
     - id: authorization
       name: '@deepseek-ai/dsh-authorization'
 
+    # Fork: the account provider is the in-repo OIDC SSO implementation, pointed at
+    # the deployment's own identity platform and inference gateway. Upstream's
+    # `@deepseek-ai/dsh-deepseek-account-platform` remains available; swap the name
+    # back to restore it. `clientId` is the public PKCE client registered at the hub.
     - id: deepseek-account
-      name: '@deepseek-ai/dsh-deepseek-account-platform'
+      name: '@deepseek-ai/dsh-oidc-account'
       config:
+        issuer: 'https://hub.puresnake.com'
+        displayName: PureHub
+        clientId: 'pure-harness'
+        inferenceOrigin: 'https://hub.puresnake.com'
         desktopPlatform: !!js "ctx.get('profileContext')?.name === 'desktop' && ['darwin', 'win32'].includes(process.platform) ? process.platform : null"
 
     - id: credentials
@@ -515,3 +524,51 @@
 
     - id: llm-deepseek-account
       name: '@deepseek-ai/dsh-llm-deepseek-account'
+      config:
+        # Fork: the account route talks to the deployment gateway, which authenticates
+        # with Authorization: Bearer and serves its own model ids. The catalog mirrors
+        # the gateway's /v1/models listing, keeping only the ids whose upstreams speak
+        # the Anthropic Messages dialect; OpenAI-dialect models ride llm-pi-ai-account.
+        baseURL: 'https://hub.puresnake.com'
+        authScheme: bearer
+        # Gateway caps max_tokens at 131072; the adapter default (256k) exceeds it.
+        maxTokens: 131072
+        models:
+          - id: glm-5.3
+            name: glm-5.3
+          - id: glm-5.3-flash
+            name: glm-5.3-flash
+          - id: claude-sonnet-5
+            name: claude-sonnet-5
+          - id: deepseek-flash
+            name: deepseek-flash
+            systemPromptUpdate: in-history
+            toolUpdate: addition-only
+          - id: deepseek-v4-pro
+            name: deepseek-v4-pro
+          - id: k3
+            name: k3
+          - id: k3-256k
+            name: k3-256k
+
+    # Fork: the gateway's OpenAI-dialect models, authenticated by the same account
+    # token the Anthropic route uses (resolved fresh per request). These ids are
+    # Codex-subscription backed: they answer only the streaming Responses API.
+    - id: llm-pi-ai-account
+      name: '@deepseek-ai/dsh-llm-pi-ai-account'
+      config:
+        providers:
+          purehub-openai:
+            displayName: PureHub
+            api: openai-responses
+            baseURL: 'https://hub.puresnake.com/v1'
+            models:
+              - id: gpt-5.5
+              - id: gpt-5.6-sol
+              - id: gpt-5.6-luna
+              - id: gpt-5.6-terra
+              - id: gpt-6-sol
+              - id: gpt-6-astra
+              - id: gpt-6-luna
+              - id: gpt-6.1-sol
+              - id: codex-auto-review

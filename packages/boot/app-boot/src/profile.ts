@@ -368,7 +368,8 @@ function pointsInto(link: string, root: string): boolean {
 
 /** Read one package manifest while traversing a dependency graph. */
 function readPackageManifest(anchor: string): ProfileManifest {
-  return JSON.parse(readFileSync(anchor, 'utf8')) as ProfileManifest
+  const raw = readFileSync(anchor, 'utf8')
+  return JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw) as ProfileManifest
 }
 
 /** Return dependency names that may be imported by a loader-visible plugin. */
@@ -616,7 +617,7 @@ export function readProfileManifest(binName: string, dir: string): ProfileManife
     throw new Error(`${binName}: failed to read profile manifest ${path}: ${String(error)}`)
   }
   // The field checks below validate the file data before trusting the parse type.
-  const parsed = JSON.parse(raw) as ProfileManifest | null
+  const parsed = JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw) as ProfileManifest | null
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(`${binName}: profile manifest ${path} must hold a JSON object`)
   }
