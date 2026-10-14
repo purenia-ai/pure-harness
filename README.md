@@ -1,16 +1,18 @@
-# DeepSeek Harness
+# PureHub Desktop
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+> **This is a modified fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).**
+> PureHub Desktop is maintained by PURESNAKE. It is **not affiliated with, endorsed by, or sponsored by DeepSeek**.
+> The upstream project owns the DeepSeek Harness name, its documentation, and its community channels.
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+PureHub Desktop is a desktop agent harness built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+Documentation: [docs/](docs/) · Upstream documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
 ## Developer preview
 
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+PureHub Desktop is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
 
 Review the [safety notice](SAFETY.md) before running the project.
 
@@ -31,8 +33,8 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 To run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://git.rongdetu.cn/snake/pure-harness.git
+cd pure-harness
 pnpm install
 pnpm run build
 pnpm dsh web
@@ -42,9 +44,9 @@ pnpm dsh web
 
 ## Community and support
 
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
+- Report bugs and request features in the [fork's issue tracker](https://git.rongdetu.cn/snake/pure-harness/issues).
 - Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
+- The [DeepSeek Harness Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions) and its Discord belong to the upstream project, not to this fork.
 
 ## Contributing
 
@@ -58,7 +60,9 @@ Start with the [development guide](docs/development.md) and [architecture docume
 
 For agents, follow [AGENTS.md](AGENTS.md).
 
-## Citation
+## Attribution
+
+This project is a modified fork of DeepSeek Harness (MIT), Copyright (c) 2026 DeepSeek. Cite the upstream project when you refer to the harness itself:
 
 ```bibtex
 @misc{deepseek-harness2026,
@@ -72,6 +76,6 @@ For agents, follow [AGENTS.md](AGENTS.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) — the original DeepSeek copyright notice is retained verbatim; PURESNAKE's modifications are noted in the same file.
 
 Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
