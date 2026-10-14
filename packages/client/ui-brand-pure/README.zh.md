@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-本包挂载在 `web` profile 的浏览器插件名单中，顶替 `@deepseek-ai/dsh-client-ui-brand-official`，客户端以 `official` profile 构建时即会渲染。更换品牌只需编辑 [`src/client/Brand.tsx`](src/client/Brand.tsx) 中的两个常量：`BRAND_NAME` 是产品名，`MARK_PATH` 是 24x24 视窗内单路径的标志图形。
+本包挂载在 `web` profile 的浏览器插件名单中，顶替 `@deepseek-ai/dsh-client-ui-brand-official`，客户端以 `official` profile 构建时即会渲染。更换品牌只需编辑 [`src/client/Brand.tsx`](src/client/Brand.tsx) 中的两处：`BRAND_NAME` 是产品名，`Mark` 组件以 250.7827x220.0851 视窗内的内联 SVG 路径承载标志图形，并使用 `currentColor` 着色。
 
 ### 构建 profile
 
