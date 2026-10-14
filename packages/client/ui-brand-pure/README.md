@@ -25,7 +25,7 @@ This package fills the Web client's sidebar brand slots and the blank-session he
 <a id="use-this-package"></a>
 ## Use this package
 
-The package is mounted in the browser roster of the `web` profile in place of `@deepseek-ai/dsh-client-ui-brand-official`, and renders whenever the client is built with the `official` profile. Changing the brand means editing two constants in [`src/client/Brand.tsx`](src/client/Brand.tsx): `BRAND_NAME` names the product, and `MARK_PATH` holds the mark artwork as one path in a 24x24 view box.
+The package is mounted in the browser roster of the `web` profile in place of `@deepseek-ai/dsh-client-ui-brand-official`, and renders whenever the client is built with the `official` profile. Changing the brand means editing two things in [`src/client/Brand.tsx`](src/client/Brand.tsx): `BRAND_NAME` names the product, and the `Mark` component holds the mark artwork as an inline SVG path in a `250.7827x220.0851` view box, painted with `currentColor`.
 
 ### Build profile
 

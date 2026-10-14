@@ -238,10 +238,10 @@ describe.skipIf(!existsSync(join(root, 'apps/cli/lib/bin.js')))('Official option
     })
     expect((await load('badge-before')).isError).toBe(true)
     await select(bundles.badge, true)
-    await turn(owner.agent, 'Load the dsh badge skill.', [
+    await turn(owner.agent, 'Load the PureHub badge skill.', [
       toolCallResponse('badge-on', 'skill', { name: 'dsh-badge' }), textResponse('BADGE_DONE'),
     ])
-    expect(toolResult(owner.agent, 'badge-on')).toContain('powered by dsh')
+    expect(toolResult(owner.agent, 'badge-on')).toContain('powered by PureHub')
     expect(toolResult(owner.agent, 'badge-on')).toContain('dsh-badge.png')
     const minimal = await agent('minimal')
     expect((await ctx.skills.list({ cwd: workspace, scope: minimal.agent })).map(skill => skill.name)).toContain('dsh-badge')

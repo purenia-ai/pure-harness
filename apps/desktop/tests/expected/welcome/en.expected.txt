@@ -1,6 +1,6 @@
-DeepSeek Harness
-DeepSeek Harness
-Welcome to DeepSeek Harness
+PureHub Desktop
+PureHub Desktop
+Welcome to PureHub Desktop
 Build potential. Explore intelligence.
 Sign in
 Add API Key

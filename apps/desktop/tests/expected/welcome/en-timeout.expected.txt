@@ -1,5 +1,5 @@
-DeepSeek Harness
-DeepSeek Harness
+PureHub Desktop
+PureHub Desktop
 Sign in timed out
 Sign in again
 Add API Key

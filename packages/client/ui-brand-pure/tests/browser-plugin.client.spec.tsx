@@ -85,15 +85,16 @@ describe('PureHub browser-brand plugin', () => {
 
     const mark = render(<BrandMark size={34} />)
     const markNode = mark.container.firstElementChild
-    expect(markNode?.tagName).toBe('SPAN')
+    expect(markNode?.tagName).toBe('svg')
     expect(markNode?.getAttribute('aria-hidden')).toBe('true')
-    expect((markNode as HTMLElement | null)?.style.maskImage).toContain('data:image/png;base64,')
-    expect((markNode as HTMLElement | null)?.style.height).toBe('34px')
+    expect(markNode?.getAttribute('fill')).toBe('currentColor')
+    expect(markNode?.getAttribute('viewBox')).toBe('0 0 250.7827 220.0851')
+    expect(markNode?.getAttribute('height')).toBe('34')
     mark.rerender(<BrandMark size={24} />)
-    expect((mark.container.firstElementChild as HTMLElement | null)?.style.height).toBe('24px')
+    expect(mark.container.firstElementChild?.getAttribute('height')).toBe('24')
 
     const hero = render(<HeroBrandMark size={34} className="hero" />)
-    expect(hero.container.firstElementChild?.className).toBe('hero')
+    expect(hero.container.firstElementChild?.getAttribute('class')).toBe('hero')
     hero.unmount()
   })
 })
