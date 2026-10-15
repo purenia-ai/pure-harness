@@ -48,6 +48,18 @@ describe('dsh-base bundle', () => {
       baseURL: 'https://hub.puresnake.com', authScheme: 'bearer', maxTokens: 131072,
     })
     expect(rows.find(row => row.id === 'llm-deepseek-account')?.config).not.toHaveProperty('models')
+    // The account route hides every listed id it cannot gate, and the gateway
+    // lists its own. These models reach the picker only through this table.
+    const providers = (rows.find(row => row.id === 'llm-pi-ai-account')?.config as {
+      providers?: Record<string, { api?: string; baseURL?: string; defaultMaxTokens?: number; models?: { id?: string }[] }>
+    } | undefined)?.providers
+    const anthropic = providers?.['purehub-anthropic']
+    expect(anthropic?.api).toBe('anthropic-messages')
+    expect(anthropic?.baseURL).toBe('https://hub.puresnake.com')
+    expect(anthropic?.defaultMaxTokens).toBe(131072)
+    expect(anthropic?.models?.map(model => model.id)).toEqual([
+      'deepseek-flash', 'deepseek-v4-pro', 'k3', 'k3-256k', 'glm-5.3', 'glm-5.3-flash', 'claude-sonnet-5',
+    ])
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')
