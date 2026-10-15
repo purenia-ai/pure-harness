@@ -1,7 +1,7 @@
 /** Installed launcher scripts preserve terminal invocation through a minimal runtime fixture. */
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
@@ -24,8 +24,24 @@ function fixture() {
   const resources = join(application, ...platform === 'darwin' ? ['Contents', 'Resources'] : ['resources'])
   const cli = join(resources, 'runtime', 'cli')
   prepareDesktopCli(cli, platform)
-  const electron = join(application, ...platform === 'darwin' ? ['Contents', 'MacOS', 'PureHub Desktop'] : ['PureHub Desktop.exe'])
+  // The macOS launcher reads the executable name from the bundle, so a name that
+  // differs from the shipped product proves the launcher carries no literal.
+  const macExecutable = 'Renamed Product'
+  const electron = join(application, ...platform === 'darwin'
+    ? ['Contents', 'MacOS', macExecutable]
+    : ['PureHub Desktop.exe'])
   mkdirSync(dirname(electron), { recursive: true })
+  if (platform === 'darwin') {
+    writeFileSync(join(application, 'Contents', 'Info.plist'), [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+      '<plist version="1.0"><dict>',
+      '<key>CFBundleExecutable</key>',
+      `<string>${macExecutable}</string>`,
+      '</dict></plist>',
+      '',
+    ].join('\n'))
+  }
   if (platform === 'win32') copyFileSync(process.execPath, electron)
   else symlinkSync(process.execPath, electron)
   const entry = join(resources, 'app.asar', 'dsh', 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js')
@@ -84,4 +100,11 @@ it.skipIf(process.platform === 'win32')('resolves chained command symlinks witho
   run.child.stdin.end()
   expect(await run.closed, run.stderr()).toBe(23)
   expect(JSON.parse(run.stdout())).toMatchObject({ args, cwd: f.root, nodeMode: '1' })
+})
+
+it.skipIf(process.platform === 'win32')('reads the macOS executable from the bundle instead of a product name', () => {
+  const launcher = readFileSync(join(import.meta.dirname, '..', 'cli', 'dsh'), 'utf8')
+  expect(launcher).toContain('CFBundleExecutable')
+  // A literal path under MacOS/ is what broke the renamed product; the bundle owns the name.
+  expect(launcher).not.toMatch(/MacOS\/[A-Za-z]/u)
 })
