@@ -98,11 +98,20 @@ git push origin HEAD && git push origin --tags
 
 **清单 HTML 的版本关联**：发布页名要带版本（`brand-replacement-checklist-v<版本>.html`）。当前所有版本共用同名页面，**发新版会把旧版清单覆盖掉**；如需历史留存，把当版 HTML 作为 release 附件再存一份。
 
+## 分支同步记录
+
+| 日期 | 动作 | 结果 |
+|---|---|---|
+| 2026-10-15 | 合入 `origin/master`（**领先 876 个提交**） | 冲突 4 个（`apps/desktop/README{,.zh,.i18n}.yaml`、`prepare-windows-ci.mjs`）；**13 项品牌面逐条核对全部存活**；锁文件随上游更新，`pnpm install` 后一致 |
+| 2026-10-15 | 合入 `origin/tray-icon-running-artwork`（ZYY） | `running-whale@2x.png` **自动取其 PureHub 星标**；`tray-windows.ico` 冲突 → 取其深色板版 |
+| 2026-10-15 | 合入 `origin/feedback-form-url`（ZYY） | 干净；带回 5 个 locale 文件的品牌词改名 |
+
+> 上游基线由 `d743267388` 更新为 `origin/master` 的 `1683aa56d3`。
+
 ## 待办
 
-- **`75bfea8135`（ZYY，2026-10-13）尚未并入品牌分支**：改了 5 个 locale 文件的品牌词，与 `.2.3` 的 `onboarding.ts` 改动内容相同，merge 预演干净、无冲突。合入后计入下一版。
-- 品牌分支当前**落后 `origin/master` 1 个提交**（即上一条）。
-- `running-whale@2x.png` 仍为空图，待用 PureHub 矢量重出 28×28 遮罩图。
-- **appId 已改、构建号脚本已加，均未提交**（2026-10-15）：`com.deepseek.harness` → `com.purenia.purehub.desktop`（10 处：脚本、dev bundle、Windows CI、安装器测试、测试期望、中英 README、两个 `.env.*.example`）；新增 `.purehub/package-desktop.sh`。计入下一版。
+- **`running-whale@2x.png` 已修**：ZYY 的 `tray-icon-running-artwork` 给了 PureHub 星标（136/784 alpha），不再是空图；master 也修过同一问题（还原成原始鲸鱼 APNG）。两版都进过冲突，最终取 ZYY 的品牌正确版本。
+- ⚠️ **tray 图标与生成器不一致**：`apps/desktop/resources/tray-windows.ico` 由 `pnpm run render:tray-icon` 从 `resources/icon-windows.svg` 生成，而**生成器精确重现的是设计师版（浅色板 #F7F8FA + 黑标）**，不是 ZYY 的深色板版。**下次跑生成器会覆盖 ZYY 的改动**。要么同步改源 SVG，要么明确该文件不走生成器。
+- **appId 已改、构建号脚本已加**（2026-10-15）：`com.deepseek.harness` → `com.purenia.purehub.desktop`；新增 `.purehub/package-desktop.sh`。appId 文案随 master 的重构迁到了 `apps/desktop/packaging/README.md`（原 `apps/desktop/README.md` 那段已被上游拆走）。
 - 清单页面名尚未带版本号，历史清单会被覆盖。
-- **文档站源链接与测试不一致（2 个测试红，既有问题）**：`scripts/project-doc-site.ts:26` 的 `REPOSITORY_URL` 仍指向上游 `github.com/deepseek-ai/deepseek-harness`，而 `scripts/project-doc-site.spec.ts:193` 期望本仓 `git.rongdetu.cn/snake/pure-harness`。要么改实现（需先确认本仓对外可达），要么把测试改回上游。
+- **文档站源链接与测试不一致（2 个测试红，既有问题）**：`scripts/project-doc-site.ts` 的 `REPOSITORY_URL` 指向上游 GitHub，而 `scripts/project-doc-site.spec.ts` 期望本仓 `git.rongdetu.cn/snake/pure-harness`。要么改实现（需先确认本仓对外可达），要么把测试改回上游。
