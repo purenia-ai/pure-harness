@@ -77,11 +77,13 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 
 | 层 | 值 | 谁定 | 出现在哪 |
 |---|---|---|---|
-| **产品版本** | `0.2.1-alpha.2` | `package.json`，**跟随上游不改** | 客户端构建记录 `DSH_CLIENT_VERSION` |
-| **构建号** | `0.2.1-alpha.2.<UTC 日期>.<序号>` | 打包时传 `DSH_DESKTOP_BUILD_VERSION` | `Info.plist`、产物文件名、更新 feed、**「关于」面板** |
-| **发布号** | `purehub-0.2.1-alpha.2.N` | git tag + 本文件 | 台账 |
+| **产品版本** | `0.2.1-alpha.3` | `package.json`，**跟随上游不改** | 客户端构建记录 `DSH_CLIENT_VERSION`；**应用内「设置 → 通用 → 当前版本」与侧栏底部** |
+| **构建号** | `0.2.1-alpha.3.<UTC 日期>.<序号>` | 打包命令行 `--build-version` | `Info.plist`、产物文件名、更新 feed、**「关于」面板（Finder 显示）** |
+| **发布号** | `purehub-0.2.1-alpha.3.N` | git tag + 本文件 | 台账 |
 
-**产品版本不动**的理由：上游每次发版都会改 `package.json` 的版本，我们跟着改就每次合并都冲突。构建号走环境变量，进得了产物、进不了清单。
+**产品版本不动**的理由：上游每次发版都会改 `package.json` 的版本，我们跟着改就每次合并都冲突。构建号走 `--build-version`，只进产物、不进清单。
+
+⚠️ **应用内的版本与系统层不一致**：客户端构建在 electron-builder 之前完成，`DSH_CLIENT_VERSION` 嵌的是产品版本，所以应用内只显示 `0.2.1-alpha.3`，看不到构建号；Finder / 关于面板显示的是 `0.2.1-alpha.3.<构建号>`。要让里外一致，需在 `package-target.ts` 调 `build:official` 之前把构建号注入 `DSH_CLIENT_VERSION`。
 
 ```sh
 # 打包：脚本算好构建号，用 --build-version 传给打包入口（见下面的注意项）
