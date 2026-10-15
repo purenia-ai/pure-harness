@@ -2,9 +2,9 @@
 
 PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账。
 
-- **上游号**跟随 `package.json`（当前 `0.2.1-alpha.2`），品牌改动不动它，避免每次合并上游都冲突。
+- **上游号**跟随 `package.json`（当前 `0.2.1-alpha.3`），品牌改动不动它，避免每次合并上游都冲突。
 - **我方发布号**用 `purehub-<上游号>.<序号>`，发布时打 tag `purehub-v<上游号>.<序号>`。
-- 上游基线：`d743267388`（upstream `release-0.2.1-alpha.2`，2026-10-09）。
+- 上游基线：`1683aa56d3`（origin/master，2026-10-15）。分叉点是 `d743267388`（upstream `release-0.2.1-alpha.2`，2026-10-09）。
 
 ## 版本
 
@@ -84,7 +84,7 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 **产品版本不动**的理由：上游每次发版都会改 `package.json` 的版本，我们跟着改就每次合并都冲突。构建号走环境变量，进得了产物、进不了清单。
 
 ```sh
-# 打包：构建号自动算，commit 自动从 git 读并写进产物
+# 打包：脚本算好构建号，用 --build-version 传给打包入口（见下面的注意项）
 ./.purehub/package-desktop.sh package:mac:arm64:unsigned
 ./.purehub/package-desktop.sh package:win:x64:unsigned
 ./.purehub/package-desktop.sh --print                     # 只打印将使用的构建号
@@ -92,6 +92,7 @@ PUREHUB_BUILD_SEQ=2 ./.purehub/package-desktop.sh ...     # 手动指定当日�
 ```
 
 - 序号取 UTC `HHMM` 并去掉前导零（semver 不接受 `0602` 这类带前导零的数字标识符）；脚本内置校验，非法值在打包前就报错。
+- ⚠️ **构建号必须走命令行 `--build-version`，不能设 `DSH_DESKTOP_BUILD_VERSION`**：打包入口从命令行取发布版本，并把该环境变量**覆盖**成产品版本（`package-target.ts`），所以外部 export 会被无声吞掉，产物就变成与上游同号的版本。`--build-version auto` 可让入口按当天已有产物自动编号（但它读本地产物用的是 `deepseek-harness-*` 正则，见待办）。
 - **commit 不需要传**：`apps/desktop/scripts/package-target.ts` 打包时自己读 `git rev-parse HEAD` 与工作区脏标记，写进产物元数据 `dshBuildCommit` / `dshBuildDirty`。
 - 构建号必须**扩展**产品版本且**不能带 `+build` 元数据**（electron-updater 用 semver 比大小，元数据不参与优先级会撞车）。
 
@@ -128,4 +129,6 @@ git push origin HEAD && git push origin --tags
 - ⚠️ **tray 图标与生成器不一致**：`apps/desktop/resources/tray-windows.ico` 由 `pnpm run render:tray-icon` 从 `resources/icon-windows.svg` 生成，而**生成器精确重现的是设计师版（浅色板 #F7F8FA + 黑标）**，不是 ZYY 的深色板版。**下次跑生成器会覆盖 ZYY 的改动**。要么同步改源 SVG，要么明确该文件不走生成器。
 - **appId 已改、构建号脚本已加**（2026-10-15）：`com.deepseek.harness` → `com.purenia.purehub.desktop`；新增 `.purehub/package-desktop.sh`。appId 文案随 master 的重构迁到了 `apps/desktop/packaging/README.md`（原 `apps/desktop/README.md` 那段已被上游拆走）。
 - 清单页面名尚未带版本号，历史清单会被覆盖。
+- **产物名 `deepseek-harness-*` 仍残留在这些地方**（`8d956a930e` 改名时漏掉；已修 `package-macos.ts` / `package-target.ts` / 对应夹具）：`desktop-build-version-discovery.ts`（正则 + bucket 前缀）、`desktop-upload-plan.ts`、`retain-desktop-ci.ts`、`installed-update-distribution.ts`。**`--build-version auto` 会因为正则不匹配而看不到本地产物。**
+- **打包本机实测**（2026-10-15，Apple Silicon）：`package:mac:arm64:unsigned` 成功。两条环境前提：`ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`（github 不可达）；以及**必须清掉 harness 注入的 `DSH_*` 变量**（`env -u DSH_HOME -u DSH_PROFILE -u DSH_PROFILE_DIR -u DSH_SESSION_ID -u DSH_SHELL -u DSH_WEB_URL`），否则打包版 Host 的 HTTP 冒烟会超时。
 - **文档站源链接与测试不一致（2 个测试红，既有问题）**：`scripts/project-doc-site.ts` 的 `REPOSITORY_URL` 指向上游 GitHub，而 `scripts/project-doc-site.spec.ts` 期望本仓 `git.rongdetu.cn/snake/pure-harness`。要么改实现（需先确认本仓对外可达），要么把测试改回上游。
