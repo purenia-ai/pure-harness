@@ -10,30 +10,22 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 
 | 版本 | 日期 | 范围 | 改了什么 | 清单 | 修改人 |
 |---|---|---|---|---|---|
-| **purehub-0.2.1-alpha.2.3**<br>（当前） | 2026-10-14 | `94221a178e..06b5b4b3db`<br>2 提交 · 143 文件 | **品牌资产**：19 张设计师图 + 8 张引导插图同名替换；productName/协议名/桌面壳文案 → PureHub Desktop；onboarding 5 键文案；根 README + LICENSE 加 fork 非隶属声明；图标去灰底；badge skill 文案 → PureHub；思考 loading → 思考中；**hero 标语刻意保持 `探索未至之境`** | [清单](https://hub.puresnake.com/p/pom/brand-replacement-checklist.html?token=f436d9c826224830a8f45953b0b2c287) | fan（品牌应用）<br>fiona（设计资产） |
+| **purehub-0.2.1-alpha.3.1**<br>（当前） | 2026-10-15 | 构建提交 `61b1b0f022` | **首个 mac 包发布**：合并上游 `origin/master` **876 个提交**；appId → `com.purenia.purehub.desktop`；安装后的 CLI 改从 bundle 读 `CFBundleExecutable`（修 `dsh plugin …` 报 "No such file or directory"）+ 打包期断言；产物名补齐 `pure-harness-*`；构建号改用 `--build-version`；running-status / tray 素材取自 ZYY 分支 | [清单](https://hub.puresnake.com/p/pom/brand-replacement-checklist.html?token=f436d9c826224830a8f45953b0b2c287) | fan（品牌/打包）· fiona（设计资产）· leazxl / 张小龙 / ZYY（上游同步与素材） |
+| **purehub-0.2.1-alpha.2.3** | 2026-10-14 | `94221a178e..06b5b4b3db`<br>2 提交 · 143 文件 | **品牌资产**：19 张设计师图 + 8 张引导插图同名替换；productName/协议名/桌面壳文案 → PureHub Desktop；onboarding 5 键文案；根 README + LICENSE 加 fork 非隶属声明；图标去灰底；badge skill 文案 → PureHub；思考 loading → 思考中；**hero 标语刻意保持 `探索未至之境`** | [清单](https://hub.puresnake.com/p/pom/brand-replacement-checklist.html?token=f436d9c826224830a8f45953b0b2c287) | fan（品牌应用）<br>fiona（设计资产） |
 | purehub-0.2.1-alpha.2.2 | 2026-10-12 | `e884f37d11..94221a178e`<br>2 提交 · 24 文件 | **品牌接入**：新增 `ui-brand-pure` 包，占用 `sidebar.brand.mark` / `sidebar.brand.name` / `conversation.hero.brand.mark`；客户端构建标题 `DSH_CLIENT_TITLE` → PureHub | — | leazxl（实现）<br>张小龙（合并） |
 | purehub-0.2.1-alpha.2.1 | 2026-10-09 ~ 10-11 | `d743267388..e884f37d11`<br>6 提交 · 47 文件 | **客户端定制**：DeepSeek 账号登录换成通用 OIDC SSO；接入 hub 模型目录并限制 `max_tokens`；Codex 模型的 OpenAI 协议路由；打包产物名 `pure-harness-*`；profile manifest 的 UTF-8 BOM 修复；登记 PureHub 公共 client id | — | leazxl |
 
-### 未记账的改动（`.2.3` 之后，尚未形成发布）
+**`.alpha.3.1` 的构建**（未签名）：
 
-打包**不会**自动更新本文件。以下改动已在 `feat/purehub-brand-replacement` 上，但还没有对应的发布行。
+| 构建号 | 产物 | commit |
+|---|---|---|
+| `0.2.1-alpha.3.20261015.854` | `pure-harness-0.2.1-alpha.3.20261015.854-mac-arm64-unsigned.dmg`（253M） | `61b1b0f022`（产物内 `dshBuildCommit` 一致；`dshBuildDirty=true`，打包时工作区有未跟踪文件） |
 
-**范围**：`06b5b4b3db..HEAD` —— 截至 2026-10-15 共 **891 个提交**，其中 **876 个来自上游 `origin/master`**。
+tag：`purehub-v0.2.1-alpha.3.1`（指向构建提交 `61b1b0f022`）。
 
-**本 fork 自己的改动**：
+### 未记账的改动（`.2.3` 之后）
 
-| 提交 | 内容 |
-|---|---|
-| `aa979a80c4` | appId → `com.purenia.purehub.desktop`；新增 `.purehub/package-desktop.sh` |
-| `390bb34eeb` | 安装后的 CLI 改为从 bundle 读 `CFBundleExecutable` + 打包期断言 |
-| `61b1b0f022` | 产物名 `deepseek-harness-*` → `pure-harness-*`（补齐 3 处漏改）；构建号改用 `--build-version` |
-| `4137e8d6e3` | 新增 `.purehub/ROADMAP.md` |
-| `99b49aca28` `1f1c1e62d8` `51b45a33d9` | 三次合并：`feedback-form-url`、`origin/master`（876 提交）、`tray-icon-running-artwork` |
-| `2ff6755814` `b12ecbcf96` `7a125d165b` `a894b30041` `e07c5bbda0` `3cd515aba2` | 台账与打包文档的同步修正 |
-
-**已产出的构建**（未形成发布、无 tag）：`pure-harness-0.2.1-alpha.3.20261015.854-mac-arm64-unsigned.dmg`，产物内记录 `dshBuildCommit=61b1b0f022`。
-
-要形成发布，就按下面「发版」加一行、打 tag；否则打包出来的产物只有**构建号 + commit** 可追溯，台账里查不到。
+`.2.3` 与 `.alpha.3.1` 之间的全部内容已记入上面的发布行。**此后的改动**打包不会自动更新本文件，需要人工加行：
 
 ## 上游更新注意项
 
