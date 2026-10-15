@@ -44,6 +44,10 @@ describe('dsh-base bundle', () => {
     expect(rows.find(row => row.id === 'web')?.config).toMatchObject({ fetchProvider: 'http' })
     expect(rows.find(row => row.id === 'web-fetch-http')).toBeDefined()
     expect(rows.find(row => row.id === 'tool-web')?.config).toMatchObject({ fetch: true })
+    expect(rows.find(row => row.id === 'llm-deepseek-account')?.config).toMatchObject({
+      baseURL: 'https://hub.puresnake.com', authScheme: 'bearer', maxTokens: 131072,
+    })
+    expect(rows.find(row => row.id === 'llm-deepseek-account')?.config).not.toHaveProperty('models')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')
