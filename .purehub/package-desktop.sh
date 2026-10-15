@@ -53,5 +53,7 @@ if [ "$DRY" = "1" ]; then
   exit 0
 fi
 
-DSH_DESKTOP_BUILD_VERSION="$BUILD_VERSION" \
-  exec pnpm --filter @deepseek-ai/dsh-desktop run "$SCRIPT" "$@"
+# The packaging entry reads the published version from its command line and copies
+# it into DSH_DESKTOP_BUILD_VERSION for the builder, so setting that variable here
+# would be overwritten by the product version.
+exec pnpm --filter @deepseek-ai/dsh-desktop run "$SCRIPT" --build-version "$BUILD_VERSION" "$@"
