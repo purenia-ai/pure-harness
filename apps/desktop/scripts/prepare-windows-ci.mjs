@@ -35,7 +35,7 @@ export function windowsCiSettings(environment, productVersion, now = new Date())
   }
   const version = validateDesktopBuildVersion(candidate, productVersion)
   const settings = [
-    'DSH_DESKTOP_APP_ID=com.deepseek.harness',
+    'DSH_DESKTOP_APP_ID=com.purenia.purehub.desktop',
     `DSH_DESKTOP_AUTO_UPDATE_ENV=${deployment}`,
     `${originKey}=${policy.origin}`,
     `DSH_DESKTOP_MANDATORY_UPDATE_CONFIG=${JSON.stringify(config)}`,
