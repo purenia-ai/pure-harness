@@ -16,17 +16,24 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 
 ### 未记账的改动（`.2.3` 之后，尚未形成发布）
 
-打包**不会**自动更新本文件。以下改动已在 `feat/purehub-brand-replacement` 上，但还没有对应的发布行：
+打包**不会**自动更新本文件。以下改动已在 `feat/purehub-brand-replacement` 上，但还没有对应的发布行。
+
+**范围**：`06b5b4b3db..HEAD` —— 截至 2026-10-15 共 **891 个提交**，其中 **876 个来自上游 `origin/master`**。
+
+**本 fork 自己的改动**：
 
 | 提交 | 内容 |
 |---|---|
 | `aa979a80c4` | appId → `com.purenia.purehub.desktop`；新增 `.purehub/package-desktop.sh` |
-| `99b49aca28` | 合入 `origin/feedback-form-url` |
-| `1f1c1e62d8` | 合入 `origin/master`（876 提交） |
-| `51b45a33d9` | 合入 `origin/tray-icon-running-artwork` |
 | `390bb34eeb` | 安装后的 CLI 改为从 bundle 读 `CFBundleExecutable` + 打包期断言 |
+| `61b1b0f022` | 产物名 `deepseek-harness-*` → `pure-harness-*`（补齐 3 处漏改）；构建号改用 `--build-version` |
+| `4137e8d6e3` | 新增 `.purehub/ROADMAP.md` |
+| `99b49aca28` `1f1c1e62d8` `51b45a33d9` | 三次合并：`feedback-form-url`、`origin/master`（876 提交）、`tray-icon-running-artwork` |
+| `2ff6755814` `b12ecbcf96` `7a125d165b` `a894b30041` `e07c5bbda0` `3cd515aba2` | 台账与打包文档的同步修正 |
 
-要形成发布，就按下面「发版」加一行、打 tag；否则打包出来的产物只有**构建号**可追溯，台账里查不到。
+**已产出的构建**（未形成发布、无 tag）：`pure-harness-0.2.1-alpha.3.20261015.854-mac-arm64-unsigned.dmg`，产物内记录 `dshBuildCommit=61b1b0f022`。
+
+要形成发布，就按下面「发版」加一行、打 tag；否则打包出来的产物只有**构建号 + commit** 可追溯，台账里查不到。
 
 ## 上游更新注意项
 
