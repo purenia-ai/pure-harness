@@ -2,9 +2,7 @@
 
 English | [中文](README.zh.md)
 
-> **This is a modified fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).**
-> PureHub Desktop is maintained by PURESNAKE. It is **not affiliated with, endorsed by, or sponsored by DeepSeek**.
-> The upstream project owns the DeepSeek Harness name, its documentation, and its community channels.
+> **This is a modified fork of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).** PureHub Desktop is maintained by PURESNAKE. It is **not affiliated with, endorsed by, or sponsored by DeepSeek**. The upstream project owns the DeepSeek Harness name, its documentation, and its community channels.
 
 PureHub Desktop is a desktop agent harness built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
 
