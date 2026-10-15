@@ -2,9 +2,7 @@
 
 [English](README.md) | 中文
 
-> **本仓库是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（MIT）的修改版分支。**
-> PureHub Desktop 由 PURESNAKE 维护，**与 DeepSeek 无隶属、背书或赞助关系**。
-> DeepSeek Harness 这一名称、其文档与社区渠道均归上游项目所有。
+> **本仓库是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（MIT）的修改版分支。** PureHub Desktop 由 PURESNAKE 维护，**与 DeepSeek 无隶属、背书或赞助关系**。DeepSeek Harness 这一名称、其文档与社区渠道均归上游项目所有。
 
 PureHub Desktop 是面向桌面的 agent harness（智能体框架），构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。
 

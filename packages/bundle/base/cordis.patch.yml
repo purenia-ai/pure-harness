@@ -52,6 +52,11 @@
     - id: typert-gateway
       name: '@deepseek-ai/dsh-api-gateway'
 
+    # Method-level access control for non-owner Peers; the Gateway requires it,
+    # and its Client half publishes the standard access Hooks.
+    - id: remote-access
+      name: '@deepseek-ai/dsh-api-remote-access'
+
     - id: session-title
       name: '@deepseek-ai/dsh-session-title'
       config:
@@ -106,8 +111,8 @@
       name: '@deepseek-ai/dsh-settings'
       disabled: !!js "!ctx.get('profileContext')"
 
-    # Credential sources: inherited environment over the managed
-    # `$DSH_HOME/.credentials.yaml`, with project and user `.env` fallbacks.
+    # Credential sources: managed `$DSH_HOME/.credentials.yaml`, then inherited
+    # environment, project `.env`, and user `.env` fallbacks.
     # Adapters resolve references per request; the Models page writes only the
     # managed document, which is never materialized into the process environment.
     - id: authorization
@@ -527,29 +532,12 @@
       config:
         # Fork: the account route talks to the deployment gateway, which authenticates
         # with Authorization: Bearer and serves its own model ids. The catalog mirrors
-        # the gateway's /v1/models listing, keeping only the ids whose upstreams speak
+        # the gateway's /models listing, keeping only the ids whose upstreams speak
         # the Anthropic Messages dialect; OpenAI-dialect models ride llm-pi-ai-account.
         baseURL: 'https://hub.puresnake.com'
         authScheme: bearer
         # Gateway caps max_tokens at 131072; the adapter default (256k) exceeds it.
         maxTokens: 131072
-        models:
-          - id: glm-5.3
-            name: glm-5.3
-          - id: glm-5.3-flash
-            name: glm-5.3-flash
-          - id: claude-sonnet-5
-            name: claude-sonnet-5
-          - id: deepseek-flash
-            name: deepseek-flash
-            systemPromptUpdate: in-history
-            toolUpdate: addition-only
-          - id: deepseek-v4-pro
-            name: deepseek-v4-pro
-          - id: k3
-            name: k3
-          - id: k3-256k
-            name: k3-256k
 
     # Fork: the gateway's OpenAI-dialect models, authenticated by the same account
     # token the Anthropic route uses (resolved fresh per request). These ids are

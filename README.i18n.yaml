@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
 /purehub-desktop:
-  en: e7a553a106e17fb9
-  zh: a90754b90f0f4c3e
+  en: 9c9ed21e86828ed7
+  zh: 02c83f4e34dd84cc
 /purehub-desktop/developer-preview:
   en: 78f1d74c522bc57b
   zh: 7dea200b2880507f
