@@ -58,7 +58,7 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 | `scripts/product-package-policy.ts` | 保留 `ui-brand-official` 标 optional 那行 |
 | `tsconfig.base.json` / `tsconfig.client.json` | 保留新增包的聚合引用 |
 | `apps/desktop/resources/*`、`installer/assets/*`、`renderer/assets/*` | 上游若改动，直接用我们的图覆盖 |
-| `packages/client/ui-chat/src/client/chat/running-whale@2x.png` | **必须非空**（设计师包给的是空图，见下） |
+| `packages/client/ui-chat/src/client/chat/running-whale@2x.png` | **必须非空**（设计师包曾给空图，2026-10-15 已换成 PureHub 星标） |
 | `apps/web/public/favicon*.svg`、`website/public/*` | 一般上游不动 |
 
 ### 🟢 安全（上游不会碰）
@@ -68,7 +68,7 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 
 ### ⚠️ 两个已知坑（别重复踩）
 
-- **`running-whale@2x.png` 是空图**：设计师包 v1/v2 都给 0/784 alpha 的全透明图，而它被 `ChatView.module.css` 当 alpha 遮罩用 → 思考中的动画标记完全不可见。上游若把该文件换回有内容的版本反而是好事。
+- **`running-whale@2x.png` 曾被换成空图**（设计师包 v1/v2 都给 0/784 alpha 的全透明图），而它被 `ChatView.module.css` 当 alpha 遮罩用 → 思考中的动画标记完全不可见。2026-10-15 已由 `tray-icon-running-artwork` 换成 PureHub 星标（136/784）。**合任何图片包后都要检查这张非空。**
 - **锁文件与快照不要手合**：`pnpm-lock.yaml` 冲突 → 任选一侧后 `pnpm install` 重新生成；`snapshots/web/**`、`tests/expected/**` 冲突 → `DSH_SNAPSHOT=refresh` 重录。
 
 ## 版本、构建、发布
