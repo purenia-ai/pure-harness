@@ -14,6 +14,20 @@ PURESNAKE 维护的 DeepSeek Harness 分支（PureHub Desktop）的版本台账�
 | purehub-0.2.1-alpha.2.2 | 2026-10-12 | `e884f37d11..94221a178e`<br>2 提交 · 24 文件 | **品牌接入**：新增 `ui-brand-pure` 包，占用 `sidebar.brand.mark` / `sidebar.brand.name` / `conversation.hero.brand.mark`；客户端构建标题 `DSH_CLIENT_TITLE` → PureHub | — | leazxl（实现）<br>张小龙（合并） |
 | purehub-0.2.1-alpha.2.1 | 2026-10-09 ~ 10-11 | `d743267388..e884f37d11`<br>6 提交 · 47 文件 | **客户端定制**：DeepSeek 账号登录换成通用 OIDC SSO；接入 hub 模型目录并限制 `max_tokens`；Codex 模型的 OpenAI 协议路由；打包产物名 `pure-harness-*`；profile manifest 的 UTF-8 BOM 修复；登记 PureHub 公共 client id | — | leazxl |
 
+### 未记账的改动（`.2.3` 之后，尚未形成发布）
+
+打包**不会**自动更新本文件。以下改动已在 `feat/purehub-brand-replacement` 上，但还没有对应的发布行：
+
+| 提交 | 内容 |
+|---|---|
+| `aa979a80c4` | appId → `com.purenia.purehub.desktop`；新增 `.purehub/package-desktop.sh` |
+| `99b49aca28` | 合入 `origin/feedback-form-url` |
+| `1f1c1e62d8` | 合入 `origin/master`（876 提交） |
+| `51b45a33d9` | 合入 `origin/tray-icon-running-artwork` |
+| `390bb34eeb` | 安装后的 CLI 改为从 bundle 读 `CFBundleExecutable` + 打包期断言 |
+
+要形成发布，就按下面「发版」加一行、打 tag；否则打包出来的产物只有**构建号**可追溯，台账里查不到。
+
 ## 上游更新注意项
 
 上游每次发版后，按此表逐条核对；**只加不删**（历史踩过的坑要留住）。
