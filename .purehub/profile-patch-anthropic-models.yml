@@ -1,0 +1,42 @@
+
+# Fork: 网关的 Anthropic Messages 模型走这条路由（账户目录的两道闸门会全部隐藏它们）
+- id: llm-pi-ai-account
+  name: "@deepseek-ai/dsh-llm-pi-ai-account"
+  config:
+    providers:
+      purehub-anthropic:
+        displayName: PureHub
+        api: anthropic-messages
+        baseURL: "https://hub.puresnake.com"
+        defaultMaxTokens: 131072
+        defaultContextWindow: 1000000
+        models:
+          - id: deepseek-flash
+            name: DeepSeek-V4.1-Flash
+            input: ["text", "image"]
+          - id: deepseek-v4-pro
+            name: DeepSeek-V4-Pro
+          - id: k3
+            name: k3
+          - id: k3-256k
+            name: k3-256k
+          - id: glm-5.3
+            name: glm-5.3
+          - id: glm-5.3-flash
+            name: glm-5.3-flash
+          - id: claude-sonnet-5
+            name: claude-sonnet-5
+      purehub-openai:
+        displayName: PureHub
+        api: openai-responses
+        baseURL: "https://hub.puresnake.com/v1"
+        models:
+          - id: gpt-5.5
+          - id: gpt-5.6-sol
+          - id: gpt-5.6-luna
+          - id: gpt-5.6-terra
+          - id: gpt-6-sol
+          - id: gpt-6-astra
+          - id: gpt-6-luna
+          - id: gpt-6.1-sol
+          - id: codex-auto-review

@@ -1,5 +1,7 @@
 #!/bin/sh
 # Run the installed CLI without changing the invoking shell or working directory.
+# The bundle owns the executable name, so read it from Info.plist instead of
+# embedding it: a renamed product must not break the installed command.
 set -e
 launcher=$0
 while [ -L "$launcher" ]; do
@@ -11,4 +13,6 @@ while [ -L "$launcher" ]; do
   esac
 done
 resources=$(CDPATH= cd -- "$(dirname -- "$launcher")/../../.." && pwd -P)
-ELECTRON_RUN_AS_NODE=1 exec "$resources/../MacOS/DeepSeek Harness" --expose-internals "$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"
+app=$(CDPATH= cd -- "$resources/.." && pwd -P)
+executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")
+ELECTRON_RUN_AS_NODE=1 exec "$app/MacOS/$executable" --expose-internals "$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"
