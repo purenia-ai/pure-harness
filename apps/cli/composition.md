@@ -54,7 +54,7 @@ flowchart LR
   cfg --> plugin_dsh_base_settings
   plugin_dsh_base_authorization["authorization<br/>@deepseek-ai/dsh-authorization"]
   cfg --> plugin_dsh_base_authorization
-  plugin_dsh_base_deepseek_account["deepseek-account<br/>@deepseek-ai/dsh-deepseek-account-platform"]
+  plugin_dsh_base_deepseek_account["deepseek-account<br/>@deepseek-ai/dsh-oidc-account"]
   cfg --> plugin_dsh_base_deepseek_account
   plugin_dsh_base_credentials["credentials<br/>@deepseek-ai/dsh-credentials-local"]
   cfg --> plugin_dsh_base_credentials
@@ -196,8 +196,22 @@ flowchart LR
   cfg --> plugin_dsh_base_fs_sandbox
   plugin_dsh_base_llm_deepseek["llm-deepseek<br/>@deepseek-ai/dsh-llm-deepseek-api-key"]
   cfg --> plugin_dsh_base_llm_deepseek
-  plugin_dsh_base_llm_deepseek_account["llm-deepseek-account<br/>@deepseek-ai/dsh-llm-deepseek-account"]
-  cfg --> plugin_dsh_base_llm_deepseek_account
+  plugin_dsh_base_llm_deepseek_account_purehub["llm-deepseek-account-purehub<br/>@deepseek-ai/dsh-llm-deepseek-account-purehub"]
+  cfg --> plugin_dsh_base_llm_deepseek_account_purehub
+  plugin_dsh_base_deepseek_flash["deepseek-flash<br/>deepseek-flash"]
+  cfg --> plugin_dsh_base_deepseek_flash
+  plugin_dsh_base_deepseek_v4_pro["deepseek-v4-pro<br/>deepseek-v4-pro"]
+  cfg --> plugin_dsh_base_deepseek_v4_pro
+  plugin_dsh_base_k3["k3<br/>k3"]
+  cfg --> plugin_dsh_base_k3
+  plugin_dsh_base_k3_256k["k3-256k<br/>k3-256k"]
+  cfg --> plugin_dsh_base_k3_256k
+  plugin_dsh_base_glm_5_3["glm-5.3<br/>glm-5.3"]
+  cfg --> plugin_dsh_base_glm_5_3
+  plugin_dsh_base_glm_5_3_flash["glm-5.3-flash<br/>glm-5.3-flash"]
+  cfg --> plugin_dsh_base_glm_5_3_flash
+  plugin_dsh_base_llm_pi_ai_account["llm-pi-ai-account<br/>@deepseek-ai/dsh-llm-pi-ai-account"]
+  cfg --> plugin_dsh_base_llm_pi_ai_account
 ```
 
 | Plugin id | Package / module |
@@ -225,7 +239,7 @@ flowchart LR
 | `config-editor` | `@deepseek-ai/dsh-config-editor` |
 | `settings` | `@deepseek-ai/dsh-settings` |
 | `authorization` | `@deepseek-ai/dsh-authorization` |
-| `deepseek-account` | `@deepseek-ai/dsh-deepseek-account-platform` |
+| `deepseek-account` | `@deepseek-ai/dsh-oidc-account` |
 | `credentials` | `@deepseek-ai/dsh-credentials-local` |
 | `llm-pi-ai` | `@deepseek-ai/dsh-llm-pi-ai` |
 | `session-persistence-jsonl` | `@deepseek-ai/dsh-session-persistence-jsonl` |
@@ -296,7 +310,14 @@ flowchart LR
 | `agent-loop` | `@deepseek-ai/dsh-agent-loop` |
 | `fs-sandbox` | `@deepseek-ai/dsh-fs-sandbox` |
 | `llm-deepseek` | `@deepseek-ai/dsh-llm-deepseek-api-key` |
-| `llm-deepseek-account` | `@deepseek-ai/dsh-llm-deepseek-account` |
+| `llm-deepseek-account-purehub` | `@deepseek-ai/dsh-llm-deepseek-account-purehub` |
+| `deepseek-flash` | `deepseek-flash` |
+| `deepseek-v4-pro` | `deepseek-v4-pro` |
+| `k3` | `k3` |
+| `k3-256k` | `k3-256k` |
+| `glm-5.3` | `glm-5.3` |
+| `glm-5.3-flash` | `glm-5.3-flash` |
+| `llm-pi-ai-account` | `@deepseek-ai/dsh-llm-pi-ai-account` |
 
 Source config: [`packages/bundle/base/cordis.patch.yml`](../../packages/bundle/base/cordis.patch.yml).
 
