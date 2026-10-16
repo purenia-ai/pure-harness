@@ -44,10 +44,28 @@ describe('dsh-base bundle', () => {
     expect(rows.find(row => row.id === 'web')?.config).toMatchObject({ fetchProvider: 'http' })
     expect(rows.find(row => row.id === 'web-fetch-http')).toBeDefined()
     expect(rows.find(row => row.id === 'tool-web')?.config).toMatchObject({ fetch: true })
-    expect(rows.find(row => row.id === 'llm-deepseek-account')?.config).toMatchObject({
-      baseURL: 'https://hub.puresnake.com', authScheme: 'bearer', maxTokens: 131072,
+    expect(rows.find(row => row.id === 'llm-deepseek-account-purehub')?.config).toMatchObject({
+      baseURL: 'https://hub.puresnake.com/v1', authScheme: 'bearer', maxTokens: 131072,
     })
-    expect(rows.find(row => row.id === 'llm-deepseek-account')?.config).not.toHaveProperty('models')
+    // The gateway's listing decides availability; the prefix map sends `gpt` ids to
+    // llm-pi-ai-account, and `models` fills in what the bare listing entries omit.
+    expect(rows.find(row => row.id === 'llm-deepseek-account-purehub')?.config).toMatchObject({
+      otherRoutePrefixes: ['gpt'],
+      models: [
+        { id: 'deepseek-flash' }, { id: 'deepseek-v4-pro' }, { id: 'k3' },
+        { id: 'k3-256k' }, { id: 'glm-5.3' }, { id: 'glm-5.3-flash' },
+      ],
+    })
+    expect(rows.find(row => row.id === 'llm-deepseek-account')).toBeUndefined()
+    // The official API-key route stays disabled, so the Models page lists no second DeepSeek row.
+    expect(rows.find(row => row.id === 'llm-deepseek')?.disabled).toBe(true)
+    expect(rows.find(row => row.id === 'agent-default-model')?.config).toMatchObject({
+      provider: 'deepseek-account', model: 'deepseek-flash',
+    })
+    // The gateway's listing carries no modality field, so every declared route states its own.
+    expect(rows.find(row => row.id === 'llm-pi-ai-account')?.config).toMatchObject({
+      providers: { 'purehub-openai': { models: expect.arrayContaining([{ id: 'gpt-6.1-sol', input: ['text', 'image'] }]) } },
+    })
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')

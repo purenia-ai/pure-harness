@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-deepseek-account-purehub/README.md
+/:
+  en: 077c4b3463ada14e
+  zh: ef6c5ff44997ccad
+/deepseek-ai-dsh-llm-deepseek-account-purehub:
+  en: 8ad087929800b712
+  zh: b6c9ca6a41cf289f
+/deepseek-ai-dsh-llm-deepseek-account-purehub/summary:
+  en: bb5eb21ad6a09dc7
+  zh: 97a09f853eea5b19
+/deepseek-ai-dsh-llm-deepseek-account-purehub/table-of-contents:
+  en: e6747830a09a09aa
+  zh: 0dc5a6c4171f3d38
+/deepseek-ai-dsh-llm-deepseek-account-purehub/use-this-package:
+  en: 724ef903f3e915a0
+  zh: d892ed8cdcb55409
+/deepseek-ai-dsh-llm-deepseek-account-purehub/understand-the-implementation:
+  en: 90741c229f55dcfb
+  zh: 3fbb028ca17030c2
+/deepseek-ai-dsh-llm-deepseek-account-purehub/further-exploration:
+  en: a699af46d869f84f
+  zh: 573d47552c2f5669
+/deepseek-ai-dsh-llm-deepseek-account-purehub/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-llm-deepseek-account-purehub/model-experience/authenticated-model-requests:
+  en: 5cf024f0d3370159
+  zh: ed480db8f348a42f
+/deepseek-ai-dsh-llm-deepseek-account-purehub/model-experience/authenticated-model-requests/what-the-model-sees:
+  en: bd62360e6e6965ab
+  zh: 519626fc34672187
+/deepseek-ai-dsh-llm-deepseek-account-purehub/model-experience/authenticated-model-requests/token-effect:
+  en: b0f531baf29daf52
+  zh: c89837e35981c318
+/deepseek-ai-dsh-llm-deepseek-account-purehub/model-experience/authenticated-model-requests/kv-cache-effect:
+  en: 2004df60d997da79
+  zh: a215a6586b44746b
+/deepseek-ai-dsh-llm-deepseek-account-purehub/known-limitations-and-deferred-work:
+  en: 1587c8cc93682a3a
+  zh: 949b8c0d79eacf9c

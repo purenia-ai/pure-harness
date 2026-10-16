@@ -418,6 +418,7 @@
     { "path": "./packages/llm/llm-deepseek" },
     { "path": "./packages/llm/llm-deepseek-api-key" },
     { "path": "./packages/llm/llm-deepseek-account" },
+    { "path": "./packages/llm/llm-deepseek-account-purehub" },
     { "path": "./packages/llm/llm-pi-ai" },
     { "path": "./packages/llm/llm-pi-ai-account" },
     { "path": "./packages/shell/bash-local" },
