@@ -301,3 +301,13 @@ it('uses the active provider id for guide dispatch and refuses duplicate entry i
   expect(registry.guide()[0]?.providerId).toBe('builtin/terminal')
   expect(() => registry.register(typeFor('duplicate', [], { guide: [guide[0]!, guide[0]!] }))).toThrow('duplicate guide entry id')
 })
+
+it('refuses guide entries whose labels are not functions, naming the contributing type', () => {
+  const registry = new SidebarRightTabRegistry(new Context())
+  const broken = typeFor('extension/broken', [], { id: 'extension/broken', guide: [{ id: 'open', order: 10, title: () => 'Broken' }] })
+  Object.assign(broken.guide![0]!, { title: 'Broken' })
+  expect(() => registry.register(broken)).toThrow('guide entry "open" in "extension/broken" has a non-function title')
+  const described = typeFor('extension/described', [], { id: 'extension/described', guide: [{ id: 'open', order: 10, title: () => 'Described', description: () => 'Text' }] })
+  Object.assign(described.guide![0]!, { description: 'Text' })
+  expect(() => registry.register(described)).toThrow('guide entry "open" in "extension/described" has a non-function description')
+})

@@ -134,7 +134,10 @@ export interface SidebarRightTabDefinition {
    * @returns the title in the current language.
    */
   readonly title: (address: string) => string
-  /** Entry boxes for the guide page. Omit to stay off it. */
+  /**
+   * Entry boxes for the guide page. Omit to stay off it.
+   * Labels are called per render, so label properties must be functions; registration rejects non-function labels by name.
+   */
   readonly guide?: readonly SidebarRightGuideEntry[]
 }
 
@@ -248,12 +251,18 @@ export class SidebarRightTabRegistry {
    * so is an `id` already in use.
    * @param definition - the contributed type.
    * @returns idempotent disposer.
-   * @throws when the id is taken, or the kind is already registered in a way this one cannot coexist with.
+   * @throws when the id is taken, the kind is already registered in a way this one cannot coexist with,
+   *   or a guide entry's `title` or `description` is not a function — named at registration so a
+   *   misbehaving contributor fails its own plugin instead of crashing the guide page at render.
    */
   register(definition: SidebarRightTabDefinition): () => void {
     const { id, kind } = definition
     const entries = definition.guide ?? []
     if (new Set(entries.map(entry => entry.id)).size !== entries.length) throw new Error(`sidebarRight: duplicate guide entry id in "${id}"`)
+    for (const entry of entries) {
+      if (typeof entry.title !== 'function') throw new Error(`sidebarRight: guide entry "${entry.id}" in "${id}" has a non-function title; guide titles are called per render and must be () => string`)
+      if (entry.description !== undefined && typeof entry.description !== 'function') throw new Error(`sidebarRight: guide entry "${entry.id}" in "${id}" has a non-function description`)
+    }
     const band = definition.priority ?? DEFAULT_BAND
     if (this.ids.has(id)) throw new Error(`sidebarRight: tab type id "${id}" is already registered`)
     const held = this.kinds.get(kind)
