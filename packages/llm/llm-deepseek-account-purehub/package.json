@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-llm-deepseek-account-purehub",
   "description": "Fork-owned account-authenticated Messages route with the PureHub gateway model listing",
-  "version": "0.2.1-alpha.3",
+  "version": "0.2.1-alpha.4",
   "publishConfig": {
     "access": "public"
   },
