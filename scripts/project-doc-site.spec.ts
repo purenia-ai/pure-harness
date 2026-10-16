@@ -150,7 +150,8 @@ describe('publishableImage', () => {
     expect(publishableImage(join(root, 'packages/logo.svg'), realpathSync(root))).toBe(real)
   })
 
-  it('refuses a target whose real path escapes the repository', () => {
+  // Creating file symlinks requires privileges that Windows CI does not guarantee.
+  it.skipIf(process.platform === 'win32')('refuses a target whose real path escapes the repository', () => {
     // Publication copies the bytes onto the site, so a reference reaching a
     // build-machine file must not be treated as an image the repository owns.
     const { root } = fixture()
@@ -192,7 +193,7 @@ describe('rewriteMarkdown', () => {
       repositoryRef: 'abc123',
     })).toBe(
       '[B](./reference/b.md#part) '
-      + '[source](https://git.rongdetu.cn/snake/pure-harness/blob/abc123/packages/tool.ts#L2) '
+      + '[source](https://github.com/deepseek-ai/deepseek-harness/blob/abc123/packages/tool.ts#L2) '
       + '[web](https://example.com)\n',
     )
   })
@@ -297,7 +298,7 @@ describe('rewriteMarkdown', () => {
       repositoryRef: 'abc123',
     })).toBe(
       '[title](./reference/b.md "b.md") '
-      + '[escaped](https://git.rongdetu.cn/snake/pure-harness/blob/abc123/docs/x(y).md)\n',
+      + '[escaped](https://github.com/deepseek-ai/deepseek-harness/blob/abc123/docs/x(y).md)\n',
     )
   })
 

@@ -131,12 +131,20 @@ const homeAndGuide = pairedPages([
     order: 2,
   },
   {
+    source: 'docs/user/guide/interface-regions.md',
+    route: 'guide/interface-regions.md',
+    label: { root: '界面区域名称', en: 'Name the interface regions' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '入门', en: 'Guide' },
+    order: 3,
+  },
+  {
     source: 'docs/user/guide/network-proxy.md',
     route: 'guide/network-proxy.md',
     label: { root: '网络代理', en: 'Network proxy' },
     sidebar: { root: 'zh-guide', en: 'en-guide' },
     section: { root: '入门', en: 'Guide' },
-    order: 3,
+    order: 4,
   },
   {
     source: 'docs/user/guide/public-deployments.md',
@@ -144,7 +152,7 @@ const homeAndGuide = pairedPages([
     label: { root: '公开部署', en: 'Public deployments' },
     sidebar: { root: 'zh-guide', en: 'en-guide' },
     section: { root: '入门', en: 'Guide' },
-    order: 4,
+    order: 5,
   },
   {
     source: 'docs/user/guide/python-sdk.md',

@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for interface-regions.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/user/guide/interface-regions.md
+/web-ui-interface-regions:
+  en: 74aa98a65b37351e
+  zh: 3e0c7810db142248
+/web-ui-interface-regions/overall-layout:
+  en: ed6f5f6b0fe0e1ec
+  zh: ec00d82cc2bdcb61
+/web-ui-interface-regions/visual-tour:
+  en: a01dd9d335b1633a
+  zh: db312e9dbd8ffb15
+/web-ui-interface-regions/visual-tour/walk-through-one-request:
+  en: b0d381e8e60f545c
+  zh: 9473420785077171
+/web-ui-interface-regions/sidebar:
+  en: dec872f3fbc749a8
+  zh: 2e52b2513498f8c9
+/web-ui-interface-regions/main-area-and-conversation:
+  en: b2484dfcf6056350
+  zh: bf5f2279e819cd37
+/web-ui-interface-regions/right-panel:
+  en: 7b4e1d4f4f6f46b0
+  zh: fe383985ff7025da
+/web-ui-interface-regions/settings-and-other-pages:
+  en: b5f0f28530c972ae
+  zh: 86f275b71f7bac7b
+/web-ui-interface-regions/temporary-surfaces:
+  en: d6de7d9e1d13714d
+  zh: e632ba7d97319af9
+/web-ui-interface-regions/naming-guidance:
+  en: da8487e181908441
+  zh: e84c059d903777f3
