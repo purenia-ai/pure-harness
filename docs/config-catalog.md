@@ -1736,6 +1736,8 @@ export interface Config {
 ```ts config-catalog
 /** Account route configuration; authentication comes exclusively from the account service. */
 export interface Config extends Omit<ProtocolConfig, 'models'> {
+  /** Header scheme used when sending the account token. */
+  authScheme: Volatile<'x-dsh-auth-token' | 'bearer' | undefined>
   /** Deadline of one listing request, which also bounds a first-use wait (default five seconds). */
   modelsTimeoutMs: Volatile<number>
   /**
@@ -1751,6 +1753,45 @@ export interface Config extends Omit<ProtocolConfig, 'models'> {
 export type ModelOverride = Omit<DeepSeekCatalogModel, 'id'>
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account-purehub -->
+<a id="deepseek-aidsh-llm-deepseek-account-purehub"></a>
+
+## `@deepseek-ai/dsh-llm-deepseek-account-purehub`
+
+- `inject`: `llm`
+- `refs`: [`DeepSeekCatalogModel`](../packages/llm/llm-deepseek/src/index.ts) · `ModelOverride` (`@deepseek-ai/dsh-llm-deepseek-account/src/config.ts`) · [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/llm/llm-deepseek-account-purehub/src/config.ts:44`](../packages/llm/llm-deepseek-account-purehub/src/config.ts)
+
+```ts config-catalog
+/** Account route configuration; authentication comes exclusively from the account service. */
+export interface Config extends Omit<ProtocolConfig, 'models'> {
+  /** Header scheme used when sending the account token. */
+  authScheme: Volatile<'x-dsh-auth-token' | 'bearer' | undefined>
+  /** Deadline of one listing request, which also bounds a first-use wait (default five seconds). */
+  modelsTimeoutMs: Volatile<number>
+  /** Listing age after which the next access refreshes it in the background (default ten minutes). */
+  modelsMaxAgeMs: Volatile<number>
+  /** Field overrides by model id, layered over the account listing and the built-in catalog. */
+  modelOverrides: Volatile<Record<string, ModelOverride>>
+  /**
+   * Ids this route serves that the listing describes thinly, in listing order.
+   * A listed id is offered unless another route owns it; a declaration supplies
+   * the name, capacities, modalities, and Messages update modes the listing
+   * omits, layers over this build's knowledge for the same id, and is the
+   * offered floor before any listing loads. A declared id absent from a loaded
+   * listing stays hidden, because the gateway decides availability.
+   */
+  models: Volatile<DeepSeekCatalogModel[]>
+  /**
+   * Id prefixes owned by another provider route, matched against the listing.
+   * A listed id under one stays hidden here and is reported when requested,
+   * because this Messages route cannot carry its dialect. Defaults to `gpt`.
+   */
+  otherRoutePrefixes: Volatile<readonly string[]>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account-purehub -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-api-key -->
 <a id="deepseek-aidsh-llm-deepseek-api-key"></a>
@@ -2045,6 +2086,33 @@ export type PiAiThinkingTokenBudgetField = NonNullable<OpenAICompletionsCompat['
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai-account -->
+<a id="deepseek-aidsh-llm-pi-ai-account"></a>
+
+## `@deepseek-ai/dsh-llm-pi-ai-account`
+
+- `inject`: `llm`
+- `refs`: [`PiAiProviderProfile`](../packages/llm/llm-pi-ai/src/index.ts) · `Volatile` (`@deepseek-ai/cosmokit`)
+- `source`: [`packages/llm/llm-pi-ai-account/src/index.ts:45`](../packages/llm/llm-pi-ai-account/src/index.ts)
+
+```ts config-catalog
+/**
+ * Deployment-owned route table. The shape is the generic pi-ai plugin's
+ * `providers` dict restricted to the knobs a static, account-authenticated
+ * route needs; credential references (`apiKeyEnv`) are deliberately absent —
+ * authentication here always comes from the account service.
+ */
+export interface Config {
+  /**
+   * Account-authenticated pi-ai provider routes, keyed by provider. Each
+   * route must name its own `baseURL`: the account service validates the
+   * request origin before handing out a token.
+   */
+  providers: Volatile<Record<string, PiAiProviderProfile>>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai-account -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-replay -->
 <a id="deepseek-aidsh-llm-replay"></a>
 
@@ -2329,6 +2397,75 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-office-to-pdf -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-oidc-account -->
+<a id="deepseek-aidsh-oidc-account"></a>
+
+## `@deepseek-ai/dsh-oidc-account`
+
+- `inject`: `credentials` · `authorization`
+- `source`: [`packages/credentials/oidc-account/src/index.ts:16`](../packages/credentials/oidc-account/src/index.ts)
+
+```ts config-catalog
+/** Deployment-specific OIDC SSO configuration. */
+export interface Config {
+  /** OIDC issuer origin; discovery reads `{issuer}/.well-known/openid-configuration`. */
+  issuer?: string
+  /** User-facing name of the SSO shown by generic authorization surfaces. */
+  displayName?: string
+  /** Public client identifier registered at the SSO. */
+  clientId?: string
+  /** Optional confidential-client secret; desktop deployments normally leave this empty. */
+  clientSecret?: string
+  /** How clientSecret authenticates token requests (default `basic`). */
+  clientSecretAuth?: 'basic' | 'post'
+  /** Requested scope string (default `openid profile email offline_access`). */
+  scope?: string
+  /** Read `.well-known/openid-configuration` for endpoints not configured explicitly (default true). */
+  discovery?: boolean
+  /** Explicit authorization endpoint; wins over discovery. */
+  authorizationEndpoint?: string
+  /** Explicit token endpoint; wins over discovery. */
+  tokenEndpoint?: string
+  /** Explicit userinfo endpoint; wins over discovery. */
+  userinfoEndpoint?: string
+  /** Explicit RFC 7009 revocation endpoint; wins over discovery. */
+  revocationEndpoint?: string
+  /** Explicit end-session endpoint; wins over discovery. */
+  endSessionEndpoint?: string
+  /** Exact HTTP(S) origin allowed to receive account tokens for inference and files. */
+  inferenceOrigin?: string
+  /** Allow HTTP only on loopback for a development IdP. */
+  allowLoopbackHttp?: boolean
+  /** Account console link shown in the account UI; defaults to `{issuer}/usage`. */
+  usageUrl?: string
+  /** Account top-up link shown in the account UI; defaults to `{issuer}/top_up`. */
+  topUpUrl?: string
+  /** userinfo claim carrying the stable account id (default `sub`). */
+  claimId?: string
+  /** userinfo claim carrying the display name (default `nickname`, falling back to `username`). */
+  claimName?: string
+  /** userinfo claim carrying the contact (default `email`, falling back to `mobile`). */
+  claimContact?: string
+  /** userinfo claim carrying the avatar URL (default `picture`). */
+  claimAvatar?: string
+  /** Host-only headers sent exclusively to the SSO origin; authorization headers cannot be overridden. */
+  requestHeaders?: Record<string, string>
+  /** Deadline for each SSO HTTP request. */
+  requestTimeoutMs?: number
+  /** Upper bound for the entire local attempt. */
+  attemptTimeoutMs?: number
+  /** Additional revocation attempts after the first request fails, at most five. */
+  logoutMaxRetries?: number
+  /** Delay before the first revocation retry; each later delay doubles. */
+  logoutRetryDelayMs?: number
+  /** Access tokens this close to expiry are refreshed before use (default one minute). */
+  refreshMarginMs?: number
+  /** Native desktop identity for SSO requests; null identifies the client as web. */
+  desktopPlatform?: 'darwin' | 'win32' | null
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-oidc-account -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-permission-presets -->
 <a id="deepseek-aidsh-permission-presets"></a>
@@ -4605,6 +4742,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-official` | — | [`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-brand-pure` | — | [`packages/client/ui-brand-pure/src/index.ts`](../packages/client/ui-brand-pure/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-chat` | — | [`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-commands` | — | [`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-conversation` | — | [`packages/client/ui-conversation/src/index.ts`](../packages/client/ui-conversation/src/index.ts) |
