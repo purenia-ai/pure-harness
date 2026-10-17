@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-oidc-account` 是 `DeepSeekAccount` 服务的标准 OIDC 实现：通过系统浏览器完成 authorization code + PKCE 登录，把 access token（及可选 refresh token）存入凭据存储，并向推理路由提供 token。它替换 `@deepseek-ai/dsh-deepseek-account-platform` 的私有 `auth_init/auth_exchange` 协议，对接任何标准 OAuth2/OIDC 身份提供方（本 fork 默认指向 `https://hub.puresnake.com`）。
+`dsh-oidc-account` 让部署通过任意标准 OAuth2/OIDC 身份提供方完成登录：在系统浏览器中完成 authorization code + PKCE 登录，把 access token（及可选 refresh token）存入凭据存储，并向推理路由提供 token。当用户使用通用 SSO 登录时选择本包——本 fork 默认指向 `https://hub.puresnake.com`——而不是它所替换的私有平台协议。主要边界：通用 SSO 没有钱包与赠金数据，余额功能会显示为不可用。
 
 ## 目录
 
@@ -17,6 +17,7 @@ kind: "package-reference"
 - [理解实现](#understand-the-implementation)
 - [模型体验](#model-experience)
 - [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 <a id="use-this-package"></a>
 ## 使用本包
@@ -43,7 +44,7 @@ kind: "package-reference"
 
 ### Token 生命周期
 
-access token 临近过期（`refreshMarginMs`，默认 60 秒）时，`resolveToken` 与账号详情查询会在 `modifyRecord` 的跨进程锁内执行 `refresh_token` 兑换并单飞去重；SSO 返回 `invalid_grant` 会使凭据失效并广播 `deepseek-account/session-expired`。没有 refresh token 且已过期的授权同样失效。
+access token 临近过期（`refreshMarginMs`，默认 60 秒）时，`resolveToken` 与账号详情查询会在记录存储的跨进程锁内执行 `refresh_token` 兑换并单飞去重；SSO 返回 `invalid_grant` 会使凭据失效并广播 `deepseek-account/session-expired`。没有 refresh token 且已过期的授权同样失效。
 
 ### 账号详情
 
@@ -74,3 +75,13 @@ access token 临近过期（`refreshMarginMs`，默认 60 秒）时，`resolveTo
 - **余额与赠金不可用**——通用 SSO 没有对应概念，余额卡片显示不可用；接入自有计费 API 需要扩展一个 `balanceEndpoint`。
 - **公开客户端假设**——默认不带 `client_secret`（公开客户端 + PKCE）；机密客户端可配置 `clientSecret` 与 `clientSecretAuth`，但把 secret 打进桌面安装包并不真正保密。
 - **端点与 issuer 强制同源**——端点分布在其他源时需要扩展配置而不是放宽校验。
+
+<a id="dev-note"></a>
+### 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

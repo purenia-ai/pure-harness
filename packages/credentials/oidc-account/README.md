@@ -7,16 +7,17 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
-## Overview
+## Summary
 
-`dsh-oidc-account` is the standard OIDC implementation of the `DeepSeekAccount` service: it completes an authorization code + PKCE sign-in through the system browser, stores the access token (and optional refresh token) in the credential store, and supplies the token to inference routes. It replaces the private `auth_init/auth_exchange` protocol of `@deepseek-ai/dsh-deepseek-account-platform` and works against any standard OAuth2/OIDC identity provider (this fork defaults to `https://hub.puresnake.com`).
+`dsh-oidc-account` signs a deployment in through any standard OAuth2/OIDC identity provider: it completes an authorization code + PKCE login in the system browser, stores the access token (and optional refresh token) in the credential store, and supplies the token to inference routes. Choose it when users sign in with generic SSO — this fork defaults to `https://hub.puresnake.com` — instead of the proprietary platform protocol it replaces. The main boundary: a generic SSO exposes no wallet or bonus data, so balance features render as unavailable.
 
-## Contents
+## Table of Contents
 
 - [Use this package](#use-this-package)
 - [Understand the implementation](#understand-the-implementation)
-- [Model experience](#model-experience)
-- [Known limitations and deferred work](#known-limitations-and-deferred-work)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 <a id="use-this-package"></a>
 ## Use this package
@@ -59,18 +60,28 @@ When an access token nears expiry (`refreshMarginMs`, default 60 seconds), `reso
 The implementation is isomorphic to `@deepseek-ai/dsh-deepseek-account-platform`: the attempt state machine (initializing/waiting-browser/exchanging/committing/succeeded/cancelled/expired/failed), the exact `/oauth/callback` route with a timing-safe state comparison, the `ctx.authorization` flow commit contract, the signal-driven `watch` snapshots, and `installAccountTaskCancellation`. Only the protocol layer (standard OIDC endpoints and RFC 6749 errors in `src/oidc.ts`) and token refresh differ. The callback success page is rendered locally (bilingual) instead of redirecting to a platform page.
 
 <a id="model-experience"></a>
-## Model experience
+## Model Experience
 
-None, because account credentials only affect HTTP authentication and never enter model prompts, Session logs, or tool results.
+None, as account credentials only affect HTTP authentication and never enter model prompts, Session logs, or tool results.
 
 #### KV Cache effect
 
 Does not change the model request prefix.
 
-## Known limitations and deferred work
+## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
 
 - **Balance and bonuses are unavailable** — a generic SSO has no such concepts, so the balance card renders unavailable; wiring a proprietary billing API takes a future `balanceEndpoint` extension.
 - **Public client assumption** — token requests omit `client_secret` by default (public client + PKCE); confidential clients may configure `clientSecret` and `clientSecretAuth`, though a secret shipped in a desktop installer is not truly secret.
 - **Endpoints must share the issuer origin** — a deployment with endpoints on other origins needs an explicit configuration extension, not relaxed validation.
+
+<a id="dev-note"></a>
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

@@ -18,6 +18,7 @@ kind: "package-reference"
 - [进一步探索](#further-exploration)
 - [模型体验](#model-experience)
 - [已知限制与后续工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 <a id="use-this-package"></a>
 ## 使用此包
@@ -48,10 +49,12 @@ fork 的网关在 `/v1/messages` 提供 Anthropic Messages 方言，模型列表
 
 `modelOverrides` 可调整单个模型而不替换整个目录，字段与继承规则同上游路由。
 
+<a id="understand-the-implementation"></a>
 ## 理解实现
 
 `src/config.ts` 解析本 fork 的配置：上游的账号设置加上 `models` 与 `otherRoutePrefixes`，后两者不会传到上游解析器。`src/index.ts` 复用上游包的 `AccountModelCatalog`、`requestModelListing` 与账号解析器，用 fork 的 `/v1/models` 推导覆盖解析出的列表地址，并通过共享 Messages 传输注册 `deepseek-account` 提供方。`src/resolve-catalog.ts` 是 fork 的目录解析：先丢掉属于另一个路由的 id，再按 id 依次叠加列表事实、声明与本构建的知识。
 
+<a id="further-exploration"></a>
 ## 进一步探索
 
 - [`@deepseek-ai/dsh-llm-deepseek-account`](../llm-deepseek-account/README.zh.md) — 本包替换的上游账号路由。
@@ -82,3 +85,13 @@ fork 的网关在 `/v1/messages` 提供 Anthropic Messages 方言，模型列表
 - 网关不标注方言，因此方言映射属于部署配置：新接一个说别的协议的上游时，既要在 `otherRoutePrefixes` 加前缀，也要有对应路由。
 - 有意不做版本门禁；由网关的列表决定本账号能用哪些模型。
 - 过滤在客户端执行；改过的客户端仍可以请求任意 id，除非服务端拒绝。
+
+<a id="dev-note"></a>
+### 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

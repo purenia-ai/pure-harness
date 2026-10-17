@@ -2,15 +2,39 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/llm-pi-ai-account/README.md
+/:
+  en: 4326e0498c1d4e37
+  zh: 0898ca9267f28c12
 /deepseek-ai-dsh-llm-pi-ai-account:
-  en: e952c9cb0f0d39bd
-  zh: 70497ca9c4f0e8ec
+  en: 16aeaccae6d84368
+  zh: 16de075bdca17802
+/deepseek-ai-dsh-llm-pi-ai-account/summary:
+  en: a8d7050f64cfe4f2
+  zh: 86ffb10ad63a09a3
+/deepseek-ai-dsh-llm-pi-ai-account/table-of-contents:
+  en: 23386452a66b2fbd
+  zh: dc8dd4f5941b9f74
 /deepseek-ai-dsh-llm-pi-ai-account/use-this-package:
-  en: c9c5aa43a4b1106b
-  zh: 1f9f2a52fafbc42e
+  en: 04316bcbfc7cdbe6
+  zh: c35be3bcf92f067c
+/deepseek-ai-dsh-llm-pi-ai-account/use-this-package/minimal-configuration:
+  en: b075d986dd2db039
+  zh: f5185f70763dedee
 /deepseek-ai-dsh-llm-pi-ai-account/understand-the-implementation:
-  en: 894d0456e6afe15c
-  zh: 1fad3dfd57cacb2f
+  en: af1ba984e2f82242
+  zh: 2acdcd6345e9dbe0
 /deepseek-ai-dsh-llm-pi-ai-account/further-exploration:
-  en: bdd0dfa2057903c5
-  zh: f133a70ad873f20b
+  en: d5dec474ab73854c
+  zh: 55d1a88b9b15e8ab
+/deepseek-ai-dsh-llm-pi-ai-account/model-experience:
+  en: 015a9972f4c22f19
+  zh: db7c10858367d6df
+/deepseek-ai-dsh-llm-pi-ai-account/model-experience/kv-cache-effect:
+  en: d49aecb511109573
+  zh: cadb506c225d6ac7
+/deepseek-ai-dsh-llm-pi-ai-account/known-limitations-and-deferred-work:
+  en: 05d32f54037e9f6f
+  zh: 7fc4a521d742ac9a
+/deepseek-ai-dsh-llm-pi-ai-account/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

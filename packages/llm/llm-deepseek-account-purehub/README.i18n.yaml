@@ -12,14 +12,14 @@
   en: bb5eb21ad6a09dc7
   zh: 97a09f853eea5b19
 /deepseek-ai-dsh-llm-deepseek-account-purehub/table-of-contents:
-  en: e6747830a09a09aa
-  zh: 0dc5a6c4171f3d38
+  en: 23386452a66b2fbd
+  zh: 4cf93c4bf17b3da2
 /deepseek-ai-dsh-llm-deepseek-account-purehub/use-this-package:
   en: 724ef903f3e915a0
-  zh: d892ed8cdcb55409
+  zh: dead526e170b89d8
 /deepseek-ai-dsh-llm-deepseek-account-purehub/understand-the-implementation:
   en: 90741c229f55dcfb
-  zh: 3fbb028ca17030c2
+  zh: 2d62c5b6b3324883
 /deepseek-ai-dsh-llm-deepseek-account-purehub/further-exploration:
   en: a699af46d869f84f
   zh: 573d47552c2f5669
@@ -39,5 +39,8 @@
   en: 2004df60d997da79
   zh: a215a6586b44746b
 /deepseek-ai-dsh-llm-deepseek-account-purehub/known-limitations-and-deferred-work:
-  en: 1587c8cc93682a3a
-  zh: 949b8c0d79eacf9c
+  en: 843ef7708a545a67
+  zh: f11d40725a45b1d2
+/deepseek-ai-dsh-llm-deepseek-account-purehub/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

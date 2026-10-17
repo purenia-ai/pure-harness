@@ -18,6 +18,7 @@ Register the account-authenticated Anthropic Messages route `deepseek-account` f
 - [Further Exploration](#further-exploration)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 <a id="use-this-package"></a>
 ## Use this package
@@ -82,3 +83,13 @@ Credentials and catalog availability do not enter model input; the protocol tran
 - The gateway marks no dialect, so the dialect map is a deployment setting: a new upstream that speaks another protocol needs a prefix here as well as a route.
 - Version gating is deliberately absent; the gateway's listing selects the models this account may use.
 - The filter runs in this client; a modified client can still request any id unless the service rejects it.
+
+<a id="dev-note"></a>
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>
