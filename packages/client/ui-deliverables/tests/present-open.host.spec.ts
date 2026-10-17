@@ -22,6 +22,22 @@ afterEach(async () => {
   vi.restoreAllMocks()
 })
 
+/**
+ * Whether this host can create the symlinks the final-symlink refusal case constructs.
+ * Windows without Developer Mode or an elevated token denies symlink creation (EPERM).
+ */
+const symlinkSupported = await (async () => {
+  const probe = await mkdtemp(join(tmpdir(), 'dsh-symlink-capacity-'))
+  try {
+    await symlink(join(probe, 'target'), join(probe, 'link'))
+    return true
+  } catch {
+    return false
+  } finally {
+    await rm(probe, { recursive: true, force: true })
+  }
+})()
+
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'dsh-present-open-'))
   cleanups.push(() => rm(root, { recursive: true, force: true }))
@@ -131,7 +147,8 @@ describe('Presented workspace file native open route', () => {
     expect(opener).not.toHaveBeenCalled()
   })
 
-  it('opens external regular files through absolute and relative paths but refuses final symlinks', async () => {
+  it('opens external regular files through absolute and relative paths but refuses final symlinks', async (ctx) => {
+    ctx.skip(!symlinkSupported, 'this host cannot create symlinks (Windows needs Developer Mode or an elevated token), so the refusal case cannot be constructed')
     const { root, cwd, file, open, opener } = await fixture()
     const outside = join(root, 'outside.txt')
     await writeFile(outside, 'outside')

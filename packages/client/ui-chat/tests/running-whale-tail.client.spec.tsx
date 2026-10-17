@@ -27,7 +27,7 @@ describe('RunningWhaleTail', () => {
     expect(view.container.querySelector('[style]')).toBeNull()
   })
 
-  it('ships a 28px alpha APNG with sixty 50ms frames and infinite playback', () => {
+  it('ships a 28px alpha mask asset for the running indicator', () => {
     const png = readFileSync(resolve(import.meta.dirname, '../src/client/chat/running-whale@2x.png'))
     expect([...png.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
     const chunks: { type: string; data: Buffer }[] = []
@@ -42,22 +42,9 @@ describe('RunningWhaleTail', () => {
     const headers = chunks.filter(chunk => chunk.type === 'IHDR')
     expect(headers).toHaveLength(1)
     const header = headers[0]!.data
-    expect([header.readUInt32BE(0), header.readUInt32BE(4), header[8], header[9]]).toEqual([28, 28, 8, 4])
-    const animations = chunks.filter(chunk => chunk.type === 'acTL')
-    expect(animations).toHaveLength(1)
-    expect([animations[0]!.data.readUInt32BE(0), animations[0]!.data.readUInt32BE(4)]).toEqual([60, 0])
-    const frames = chunks.filter(chunk => chunk.type === 'fcTL')
-    expect(frames).toHaveLength(60)
-    let duration = 0
-    for (const { data } of frames) {
-      expect(data).toHaveLength(26)
-      expect(data.readUInt32BE(4)).toBeGreaterThan(0)
-      expect(data.readUInt32BE(8)).toBeGreaterThan(0)
-      expect(data.readUInt32BE(4) + data.readUInt32BE(12)).toBeLessThanOrEqual(28)
-      expect(data.readUInt32BE(8) + data.readUInt32BE(16)).toBeLessThanOrEqual(28)
-      expect([data.readUInt16BE(20), data.readUInt16BE(22)]).toEqual([1, 20])
-      duration += data.readUInt16BE(20) / data.readUInt16BE(22)
-    }
-    expect(duration).toBeCloseTo(3)
+    // The mask URL pairs with mask-mode: alpha, so the asset must carry an alpha channel.
+    expect([header.readUInt32BE(0), header.readUInt32BE(4), header[8], header[9]]).toEqual([28, 28, 8, 6])
+    // The fork's running-status artwork is a still image; no APNG chunks are shipped.
+    expect(chunks.filter(chunk => chunk.type === 'acTL' || chunk.type === 'fcTL')).toHaveLength(0)
   })
 })
