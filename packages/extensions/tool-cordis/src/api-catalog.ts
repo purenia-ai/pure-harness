@@ -6379,7 +6379,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'PlatformSession',
-    declaration: 'export interface PlatformSession {\n    readonly origin: string;\n    readonly token: string;\n    readonly userId: AccountUserId | null;\n    readonly embeddedPageDist?: string;\n    readonly requestHeaders?: Readonly<Record<string, string>>;\n}',
+    declaration: 'export interface PlatformSession {\n    readonly origin: string;\n    readonly token: string;\n    readonly userId: AccountUserId | null;\n    readonly embeddedPageDist?: string;\n    readonly sessionExchangeUrl?: string;\n    readonly usageUrl?: string;\n    readonly topUpUrl?: string;\n    readonly requestHeaders?: Readonly<Record<string, string>>;\n}',
   },
   {
     name: 'PluginChange',

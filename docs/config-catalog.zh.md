@@ -2443,6 +2443,12 @@ export interface Config {
   usageUrl?: string
   /** Account top-up link shown in the account UI; defaults to `{issuer}/top_up`. */
   topUpUrl?: string
+  /**
+   * Issuer-origin endpoint accepting the account access token as a Bearer credential to establish a
+   * page session (`POST` → 204 plus session cookie) before an embedded document's first request;
+   * empty disables the exchange and leaves the page's own login flow in charge.
+   */
+  sessionExchangeUrl?: string
   /** userinfo claim carrying the stable account id (default `sub`). */
   claimId?: string
   /** userinfo claim carrying the display name (default `nickname`, falling back to `username`). */
