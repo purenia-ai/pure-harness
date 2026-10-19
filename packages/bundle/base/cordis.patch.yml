@@ -575,6 +575,7 @@
             name: k3-256k
             inputModalities:
               - text
+              - image
           - id: glm-5.3
             name: glm-5.3
             inputModalities:
