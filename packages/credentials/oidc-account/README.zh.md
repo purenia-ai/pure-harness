@@ -38,6 +38,10 @@ kind: "package-reference"
 
 端点解析优先取显式配置（`authorizationEndpoint`、`tokenEndpoint`、`userinfoEndpoint`、`revocationEndpoint`、`endSessionEndpoint`），缺失且 `discovery: true`（默认）时读取 `{issuer}/.well-known/openid-configuration`。所有端点必须与 issuer 同源；HTTP 仅允许 `allowLoopbackHttp: true` 的本机开发 IdP。
 
+`sessionExchangeUrl` 指定一个与 issuer 同源的端点，接受账号 access token 作为 Bearer 凭证换取页面会话（`POST` → 204 加会话 Cookie）。Desktop 在嵌入账号文档的首个请求之前调用它，使文档直接以已登录状态打开，而不是渲染 SSO 登录页再刷新；留空则仍由登录页处理。与 issuer 不同源的 URL 在构造期被拒绝。
+
+`usageUrl` 与 `topUpUrl` 同时决定嵌入账号文档打开哪个页面：只有与 issuer 同源时才作为页面目标；否则文档打开 `{issuer}/usage` 或 `{issuer}/top_up`，即可能继续跳转的平台入口。
+
 ### 登录与凭据
 
 `startSignIn` 在本机 webServer 上注册 `/oauth/callback`，本地构造 authorize URL（`response_type=code`、S256 PKCE、state），浏览器批准后以 `authorization_code` 兑换 token 并提交凭据记录 `oidc-account/default`：`{version:1, token, issuer, refreshToken?, expiresAt?}`。issuer 与配置不一致的存量在启动时删除。

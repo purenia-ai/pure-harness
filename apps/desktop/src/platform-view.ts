@@ -12,6 +12,9 @@ export { PLATFORM_IPC } from './platform-ipc.ts'
 /** Bounds in desktop content coordinates, supplied by the owned application renderer. */
 export interface PlatformBounds { x: number; y: number; width: number; height: number }
 
+/** Upper bound for the pre-navigation session exchange; a timeout falls back to the page's login flow. */
+const SESSION_EXCHANGE_TIMEOUT_MS = 5_000
+
 /**
  * Decode the renderer rectangle before allocating a native view.
  * @param value - IPC payload.
@@ -59,6 +62,8 @@ export class DesktopPlatformView {
   setSession(next: PlatformSession | null): void {
     if (next?.token === this.account?.token && next?.origin === this.account?.origin
       && next?.embeddedPageDist === this.account?.embeddedPageDist
+      && next?.sessionExchangeUrl === this.account?.sessionExchangeUrl
+      && next?.usageUrl === this.account?.usageUrl && next?.topUpUrl === this.account?.topUpUrl
       && JSON.stringify(next?.requestHeaders) === JSON.stringify(this.account?.requestHeaders)) {
       if (next?.userId === this.account?.userId || this.account?.userId === null) {
         this.account = next
@@ -135,6 +140,10 @@ export class DesktopPlatformView {
       }
       callback({ requestHeaders: headers })
     })
+    // Trade the token for a page session before the first document request, so the embedded page never
+    // renders its own login form and reloads. Best effort: a failed exchange leaves that flow in charge.
+    await this.establishSession(browserSession, account)
+    if (generation !== this.generation) return
     const view = new WebContentsView({ webPreferences: {
       session: browserSession, preload: this.preload, sandbox: true, contextIsolation: true,
       additionalArguments: [`--dsh-platform-origin=${account.origin}`],
@@ -166,7 +175,7 @@ export class DesktopPlatformView {
     owner.contentView.addChildView(view)
     view.setBounds(bounds)
     try {
-      const url = new URL(page === 'usage' ? '/usage' : '/top_up', account.origin)
+      const url = this.pageUrl(account, page)
       if (account.embeddedPageDist) url.searchParams.set('dist', account.embeddedPageDist)
       await view.webContents.loadURL(url.href)
     } catch (error) {
@@ -198,6 +207,51 @@ export class DesktopPlatformView {
       throw new Error('Rejected Platform bootstrap')
     }
     return { origin: account.origin, token: account.token, locale: this.getLocale() }
+  }
+
+  /**
+   * Resolve the embedded document URL for an account page.
+   * @param account - credentials and the configured page targets.
+   * @param page - requested Platform page.
+   * @returns the configured issuer-origin URL, else the platform entry path on the account origin.
+   */
+  private pageUrl(account: PlatformSession, page: 'usage' | 'top-up'): URL {
+    const configured = page === 'usage' ? account.usageUrl : account.topUpUrl
+    if (configured !== undefined) {
+      const url = new URL(configured)
+      // The embedded document may only stay on the account origin; anything else opens the entry.
+      if (url.origin === account.origin) return url
+    }
+    return new URL(page === 'usage' ? '/usage' : '/top_up', account.origin)
+  }
+
+  /**
+   * Trade the account token for a page session before the first document request.
+   * @param target - session owning the embedded document's cookie jar.
+   * @param account - credentials and the configured exchange endpoint.
+   */
+  private async establishSession(target: Session, account: PlatformSession): Promise<void> {
+    const url = account.sessionExchangeUrl
+    if (url === undefined) return
+    try {
+      const response = await target.fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { authorization: `Bearer ${account.token}` },
+        signal: AbortSignal.timeout(SESSION_EXCHANGE_TIMEOUT_MS),
+      })
+      await response.arrayBuffer()
+      if (!response.ok) {
+        console.warn(`Platform session exchange rejected: HTTP ${response.status}`)
+        return
+      }
+      // A rejected Set-Cookie leaves the page's own login flow to recover; report it without failing the open.
+      if ((await target.cookies.get({ url: account.origin })).length === 0) {
+        console.warn('Platform session exchange stored no cookie')
+      }
+    } catch (error) {
+      console.warn('Platform session exchange failed', error)
+    }
   }
 
   /** Notify the current document after the Desktop language changes. */

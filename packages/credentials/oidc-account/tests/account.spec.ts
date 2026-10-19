@@ -25,6 +25,10 @@ interface FixtureOptions {
   exchangeOverride?: Record<string, unknown>
   discovery?: boolean
   config?: Record<string, unknown>
+  /** Configure `sessionExchangeUrl` as this path on the mock issuer. */
+  sessionExchangePath?: string
+  /** Configure `usageUrl` as this path on the mock issuer. */
+  usagePath?: string
   /** Pre-seed a stored grant before the provider starts. */
   seedGrant?: Record<string, unknown>
 }
@@ -131,6 +135,8 @@ async function fixture(options: FixtureOptions = {}) {
       userinfoEndpoint: `${origin}/oauth2/userinfo`,
       revocationEndpoint: `${origin}/oauth2/revoke`,
     } : {}),
+    ...(options.usagePath === undefined ? {} : { usageUrl: `${origin}${options.usagePath}` }),
+    ...(options.sessionExchangePath === undefined ? {} : { sessionExchangeUrl: `${origin}${options.sessionExchangePath}` }),
     ...(options.config ?? {}),
   })
   await provider
@@ -293,4 +299,50 @@ it('reports balance as unavailable and never lists bonuses', async () => {
   expect(await f.account.getBalance(clientMetadata())).toEqual({ status: 'failed' })
   expect(await f.account.getUnnotifiedBonuses(clientMetadata())).toBeNull()
   expect(await f.account.ackBonusNotified('user-1' as never, 'order-1' as never, clientMetadata())).toBe(false)
+})
+
+it('advertises same-origin account pages for the embedded document', async () => {
+  const f = await fixture({ usagePath: '/gw/usage' })
+  await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
+    kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
+  }))
+  const session = await f.account.getPlatformSession()
+  expect(session?.usageUrl).toBe(`${f.origin}/gw/usage`)
+  expect(session?.topUpUrl).toBe(`${f.origin}/top_up`)
+})
+
+it('omits an embedded page target that leaves the issuer origin', async () => {
+  const f = await fixture({ config: { usageUrl: 'https://other.example.com/usage' } })
+  await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
+    kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
+  }))
+  expect((await f.account.getPlatformSession())?.usageUrl).toBeUndefined()
+  // The account UI still links to the configured console.
+  expect((await f.account.getState()).links.usageUrl).toBe('https://other.example.com/usage')
+})
+
+it('advertises the configured embedded session exchange endpoint', async () => {
+  const f = await fixture({ sessionExchangePath: '/oauth2/session' })
+  await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
+    kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
+  }))
+  expect((await f.account.getPlatformSession())?.sessionExchangeUrl).toBe(`${f.origin}/oauth2/session`)
+})
+
+it('omits the session exchange endpoint unless it is configured', async () => {
+  const f = await fixture()
+  await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
+    kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
+  }))
+  expect((await f.account.getPlatformSession())?.sessionExchangeUrl).toBeUndefined()
+})
+
+it('rejects a session exchange endpoint outside the issuer origin', async () => {
+  await expect(fixture({ config: { sessionExchangeUrl: 'https://other.example.com/oauth2/session' } }))
+    .rejects.toThrow('sessionExchangeUrl must share the issuer origin')
+})
+
+it('rejects a relative session exchange endpoint', async () => {
+  await expect(fixture({ config: { sessionExchangeUrl: '/oauth2/session' } }))
+    .rejects.toThrow('sessionExchangeUrl must be an absolute HTTP(S) URL')
 })

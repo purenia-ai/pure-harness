@@ -38,6 +38,10 @@ The empty `clientId` is a deployment placeholder: fill in the public client ID r
 
 Endpoint resolution prefers explicit configuration (`authorizationEndpoint`, `tokenEndpoint`, `userinfoEndpoint`, `revocationEndpoint`, `endSessionEndpoint`); when absent and `discovery: true` (the default), it reads `{issuer}/.well-known/openid-configuration`. Every endpoint must share the issuer origin; HTTP is allowed only for a loopback development IdP with `allowLoopbackHttp: true`.
 
+`sessionExchangeUrl` names an issuer-origin endpoint that accepts the account access token as a Bearer credential (`POST` → 204 plus a session cookie). The Desktop posts it before the first request of an embedded account document, so that document opens already signed in instead of rendering the SSO login page and reloading; leaving it empty keeps the login page in charge. A URL outside the issuer origin is rejected at construction.
+
+`usageUrl` and `topUpUrl` additionally select the pages an embedded account document opens, and they must stay on the issuer origin to serve as such a target; otherwise the document opens `{issuer}/usage` or `{issuer}/top_up`, the platform-owned entries that may redirect onward.
+
 ### Sign-in and credentials
 
 `startSignIn` registers `/oauth/callback` on the local web server, builds the authorize URL locally (`response_type=code`, S256 PKCE, state), exchanges the approved code at the token endpoint, and commits the credential record `oidc-account/default`: `{version:1, token, issuer, refreshToken?, expiresAt?}`. A stored grant whose issuer differs from the configuration is deleted at startup.

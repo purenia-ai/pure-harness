@@ -6,6 +6,7 @@ import { DesktopPlatformView, platformBounds } from '../src/platform-view.ts'
 const state = vi.hoisted(() => ({
   views: [] as unknown[], sessions: [] as unknown[], openExternal: vi.fn(async () => {}),
   loadFailure: undefined as Error | undefined, loadBarrier: undefined as Promise<void> | undefined,
+  exchangeFailure: undefined as Error | undefined, exchangeStatus: 204, exchangeCookies: [] as unknown[],
 }))
 vi.mock('electron', () => ({
   shell: { openExternal: state.openExternal },
@@ -19,6 +20,14 @@ vi.mock('electron', () => ({
       clearCache: vi.fn(async () => {}), flushStorageData: vi.fn(),
       clearAuthCache: vi.fn(async () => {}), closeAllConnections: vi.fn(async () => {}),
       isPersistent: () => partition.startsWith('persist:'),
+      fetch: vi.fn(async (_url: string, _init?: unknown) => {
+        if (state.exchangeFailure !== undefined) throw state.exchangeFailure
+        return {
+          ok: state.exchangeStatus >= 200 && state.exchangeStatus < 300, status: state.exchangeStatus,
+          arrayBuffer: async () => new ArrayBuffer(0),
+        }
+      }),
+      cookies: { get: vi.fn(async (_filter?: unknown) => state.exchangeCookies) },
     }
     state.sessions.push(value)
     return value
@@ -43,6 +52,7 @@ vi.mock('electron', () => ({
 beforeEach(() => { vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3') })
 afterEach(() => {
   state.views.length = 0; state.sessions.length = 0; state.loadFailure = undefined; state.loadBarrier = undefined
+  state.exchangeFailure = undefined; state.exchangeStatus = 204; state.exchangeCookies = []
   vi.clearAllMocks(); vi.unstubAllEnvs()
 })
 function setup() {
@@ -91,6 +101,75 @@ it('bootstraps only the owned main frame and never puts the token in a URL', asy
   sender.mainFrame.url = 'https://other.example/usage'
   expect(() => manager.bootstrap(event)).toThrow()
   manager.close()
+})
+
+it('trades the account token for a page session before the first document request', async () => {
+  const { manager, owner } = setup()
+  manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId,
+    token: 'fixture-secret', sessionExchangeUrl: 'https://platform.deepseek.com/oauth2/session' })
+  state.exchangeCookies = [{ name: 'SESSION', value: 'stored' }]
+  await manager.open(owner, 'usage', bounds)
+  const browserSession = state.sessions.at(-1) as { fetch: ReturnType<typeof vi.fn>; cookies: { get: ReturnType<typeof vi.fn> } }
+  expect(browserSession.fetch).toHaveBeenCalledWith('https://platform.deepseek.com/oauth2/session', {
+    method: 'POST', credentials: 'include', headers: { authorization: 'Bearer fixture-secret' },
+    signal: expect.any(AbortSignal),
+  })
+  expect(browserSession.cookies.get).toHaveBeenCalledWith({ url: 'https://platform.deepseek.com' })
+  // The session cookie must exist before the document request, otherwise the page renders its login form.
+  expect(browserSession.fetch.mock.invocationCallOrder[0]).toBeLessThan(view().webContents.loadURL.mock.invocationCallOrder[0]!)
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/usage')
+})
+
+it('opens the page when the exchange endpoint rejects the token', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const { manager, owner } = setup()
+  manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId,
+    token: 'fixture-secret', sessionExchangeUrl: 'https://platform.deepseek.com/oauth2/session' })
+  state.exchangeStatus = 401
+  await manager.open(owner, 'usage', bounds)
+  expect(warn).toHaveBeenCalled()
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/usage')
+  warn.mockRestore()
+})
+
+it('opens the page when the exchange request fails', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const { manager, owner } = setup()
+  manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId,
+    token: 'fixture-secret', sessionExchangeUrl: 'https://platform.deepseek.com/oauth2/session' })
+  state.exchangeFailure = new Error('exchange unavailable')
+  await manager.open(owner, 'usage', bounds)
+  expect(warn).toHaveBeenCalled()
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/usage')
+  warn.mockRestore()
+})
+
+it('opens the configured page for each account page', async () => {
+  const { manager, owner } = setup()
+  manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId,
+    token: 'fixture-secret', usageUrl: 'https://platform.deepseek.com/gw/usage' })
+  await manager.open(owner, 'usage', bounds)
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/gw/usage')
+  // A page without a configured target keeps using the platform entry.
+  await manager.open(owner, 'top-up', bounds)
+  expect(view().webContents.loadURL).toHaveBeenLastCalledWith('https://platform.deepseek.com/top_up')
+  manager.close()
+})
+
+it('ignores a page target outside the account origin', async () => {
+  const { manager, owner } = setup()
+  manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId,
+    token: 'fixture-secret', usageUrl: 'https://elsewhere.example/gw/usage' })
+  await manager.open(owner, 'usage', bounds)
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/usage')
+  manager.close()
+})
+
+it('skips the exchange when the account configures no endpoint', async () => {
+  const { manager, owner } = setup()
+  await manager.open(owner, 'usage', bounds)
+  expect((state.sessions.at(-1) as { fetch: ReturnType<typeof vi.fn> }).fetch).not.toHaveBeenCalled()
+  expect(view().webContents.loadURL).toHaveBeenCalledWith('https://platform.deepseek.com/usage')
 })
 
 it('destroys old documents on sign-out or credential replacement', async () => {

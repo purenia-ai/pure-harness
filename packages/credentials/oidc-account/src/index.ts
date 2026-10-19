@@ -46,6 +46,12 @@ export interface Config {
   usageUrl?: string
   /** Account top-up link shown in the account UI; defaults to `{issuer}/top_up`. */
   topUpUrl?: string
+  /**
+   * Issuer-origin endpoint accepting the account access token as a Bearer credential to establish a
+   * page session (`POST` → 204 plus session cookie) before an embedded document's first request;
+   * empty disables the exchange and leaves the page's own login flow in charge.
+   */
+  sessionExchangeUrl?: string
   /** userinfo claim carrying the stable account id (default `sub`). */
   claimId?: string
   /** userinfo claim carrying the display name (default `nickname`, falling back to `username`). */
@@ -88,6 +94,7 @@ export const Config = Schema.object({
   allowLoopbackHttp: Schema.boolean().default(false),
   usageUrl: Schema.string().default(''),
   topUpUrl: Schema.string().default(''),
+  sessionExchangeUrl: Schema.string().default(''),
   claimId: Schema.string().default('sub'),
   claimName: Schema.string().default('nickname'),
   claimContact: Schema.string().default('email'),
@@ -127,6 +134,42 @@ interface Attempt {
   initialProfile?: { token: string; value: AccountDetails['profile'] }
 }
 
+/**
+ * Resolve the configured embedded-document session exchange endpoint.
+ * @param configured - absolute URL from deployment configuration, or '' when unset.
+ * @param issuer - validated issuer origin the account token may be sent to.
+ * @returns the normalized absolute URL, or undefined when the exchange is not configured.
+ */
+function resolveSessionExchangeUrl(configured: string, issuer: string): string | undefined {
+  if (configured === '') return undefined
+  let url: URL
+  try {
+    url = new URL(configured)
+  } catch {
+    throw new Error('oidc-account: sessionExchangeUrl must be an absolute HTTP(S) URL')
+  }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username !== '' || url.password !== '' || url.origin !== issuer) {
+    throw new Error('oidc-account: sessionExchangeUrl must share the issuer origin without credentials')
+  }
+  return url.href
+}
+
+/**
+ * Resolve a configured account link as an embedded-document URL.
+ * @param link - absolute or relative account link from deployment configuration.
+ * @param issuer - validated issuer origin the embedded document must stay on.
+ * @returns the normalized absolute URL, or undefined when the link leaves the issuer origin.
+ */
+function sameOriginUrl(link: string, issuer: string): string | undefined {
+  let url: URL
+  try {
+    url = new URL(link)
+  } catch {
+    return undefined
+  }
+  return url.origin === issuer && (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : undefined
+}
+
 /** The OIDC implementation owns login state and its opaque stored grant. */
 export class OidcAccount extends DeepSeekAccount {
   static inject = ['credentials', 'authorization']
@@ -141,6 +184,8 @@ export class OidcAccount extends DeepSeekAccount {
   private readonly clientId: string
   private readonly scope: string
   private readonly links: { usageUrl: string; topUpUrl: string }
+  private readonly embeddedPages: { usage: string | undefined; topUp: string | undefined }
+  private readonly sessionExchangeUrl: string | undefined
   private readonly claims: { id: string; name: string; contact: string; avatar: string }
   private readonly platform: 'darwin' | 'win32' | null
   private readonly requestHeaders: Record<string, string>
@@ -189,6 +234,13 @@ export class OidcAccount extends DeepSeekAccount {
     this.links = {
       usageUrl: resolved.usageUrl !== '' ? resolved.usageUrl : `${this.issuer}/usage`,
       topUpUrl: resolved.topUpUrl !== '' ? resolved.topUpUrl : `${this.issuer}/top_up`,
+    }
+    this.sessionExchangeUrl = resolveSessionExchangeUrl(resolved.sessionExchangeUrl, this.issuer)
+    // The embedded view only navigates inside the issuer origin, so the account links double as page
+    // targets only when they already point there; otherwise the document opens the platform entry.
+    this.embeddedPages = {
+      usage: sameOriginUrl(this.links.usageUrl, this.issuer),
+      topUp: sameOriginUrl(this.links.topUpUrl, this.issuer),
     }
     this.claims = { id: resolved.claimId, name: resolved.claimName, contact: resolved.claimContact, avatar: resolved.claimAvatar }
     this.platform = resolved.desktopPlatform
@@ -348,6 +400,9 @@ export class OidcAccount extends DeepSeekAccount {
       origin: this.issuer, token: stored.token,
       userId: this.lastProfile?.token === stored.token ? this.lastProfile.profile.value.id || null : null,
       requestHeaders: { ...this.requestHeaders },
+      ...(this.sessionExchangeUrl === undefined ? {} : { sessionExchangeUrl: this.sessionExchangeUrl }),
+      ...(this.embeddedPages.usage === undefined ? {} : { usageUrl: this.embeddedPages.usage }),
+      ...(this.embeddedPages.topUp === undefined ? {} : { topUpUrl: this.embeddedPages.topUp }),
     }
   }
 

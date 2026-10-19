@@ -24,6 +24,19 @@ export interface PlatformSession {
   readonly userId: AccountUserId | null
   /** Optional dist query value selecting the embedded frontend deployment. */
   readonly embeddedPageDist?: string
+  /**
+   * Absolute issuer-origin endpoint accepting {@link token} as a Bearer credential to establish a page
+   * session (`POST` → 204 plus session cookie) before the embedded document's first request; absent
+   * leaves the page's own login flow in charge.
+   */
+  readonly sessionExchangeUrl?: string
+  /**
+   * Absolute issuer-origin URL opened for the usage page in the embedded document; absent opens
+   * `{origin}/usage`, the platform-owned entry that may redirect onward.
+   */
+  readonly usageUrl?: string
+  /** Absolute issuer-origin URL opened for the top-up page; absent opens `{origin}/top_up`. */
+  readonly topUpUrl?: string
   /** Host-only deployment request headers; the consuming client adds its own dynamic identity, and neither reaches renderer bootstrap. */
   readonly requestHeaders?: Readonly<Record<string, string>>
 }

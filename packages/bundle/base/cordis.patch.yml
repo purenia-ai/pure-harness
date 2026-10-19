@@ -129,6 +129,14 @@
         displayName: PureHub
         clientId: 'pure-harness'
         inferenceOrigin: 'https://hub.puresnake.com'
+        # Hub endpoint trading the access token for a console session, so embedded account pages
+        # open signed in instead of rendering the hub login form and reloading.
+        sessionExchangeUrl: 'https://hub.puresnake.com/oauth2/session'
+        # Embedded documents open these pages directly; the hub entry (/usage) would redirect
+        # to its own landing page, which server configuration owns. There is no top-up page yet,
+        # so both entries open the gateway usage console.
+        usageUrl: 'https://hub.puresnake.com/gw/usage'
+        topUpUrl: 'https://hub.puresnake.com/gw/usage'
         desktopPlatform: !!js "ctx.get('profileContext')?.name === 'desktop' && ['darwin', 'win32'].includes(process.platform) ? process.platform : null"
 
     - id: credentials
@@ -554,23 +562,28 @@
         # `gpt` ids ride llm-pi-ai-account.
         otherRoutePrefixes:
           - gpt
-        # Capabilities the thin listing entries leave out: an id listed nowhere here
+        # Capabilities the thin listing entries leave out. Each image row was probed:
+        # the model must answer correctly about a solid-color test image, which also
+        # proves the gateway route delivers the image block. An id listed nowhere here
         # is still offered, as text-only with this build's own defaults.
         models:
           - id: deepseek-flash
             name: deepseek-flash
             inputModalities:
               - text
+              - image
             systemPromptUpdate: in-history
             toolUpdate: addition-only
           - id: deepseek-v4-pro
             name: deepseek-v4-pro
+            # Stays text: the gateway route answered that it received no image.
             inputModalities:
               - text
           - id: k3
             name: k3
             inputModalities:
               - text
+              - image
           - id: k3-256k
             name: k3-256k
             inputModalities:
@@ -578,11 +591,16 @@
               - image
           - id: glm-5.3
             name: glm-5.3
+            # Stays text: the gateway route answered that it received no image.
+            inputModalities:
+              - text
+          - id: glm-5.3-flash
+            name: glm-5.3-flash
             inputModalities:
               - text
               - image
-          - id: glm-5.3-flash
-            name: glm-5.3-flash
+          - id: qwen3.8-flash
+            name: qwen3.8-flash
             inputModalities:
               - text
               - image
