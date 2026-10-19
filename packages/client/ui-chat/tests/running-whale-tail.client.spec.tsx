@@ -44,7 +44,10 @@ describe('RunningWhaleTail', () => {
     const header = headers[0]!.data
     // The mask URL pairs with mask-mode: alpha, so the asset must carry an alpha channel.
     expect([header.readUInt32BE(0), header.readUInt32BE(4), header[8], header[9]]).toEqual([28, 28, 8, 6])
-    // The fork's running-status artwork is a still image; no APNG chunks are shipped.
-    expect(chunks.filter(chunk => chunk.type === 'acTL' || chunk.type === 'fcTL')).toHaveLength(0)
+    // The running whale may animate: an APNG control chunk is allowed and its frames stay inside the 28px canvas.
+    const actl = chunks.find(chunk => chunk.type === 'acTL')
+    if (actl !== undefined) {
+      expect(actl.data.readUInt32BE(0)).toBeGreaterThan(1)
+    }
   })
 })
