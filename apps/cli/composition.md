@@ -212,6 +212,8 @@ flowchart LR
   cfg --> plugin_dsh_base_glm_5_3
   plugin_dsh_base_glm_5_3_flash["glm-5.3-flash<br/>glm-5.3-flash"]
   cfg --> plugin_dsh_base_glm_5_3_flash
+  plugin_dsh_base_qwen3_8_flash["qwen3.8-flash<br/>qwen3.8-flash"]
+  cfg --> plugin_dsh_base_qwen3_8_flash
   plugin_dsh_base_llm_pi_ai_account["llm-pi-ai-account<br/>@deepseek-ai/dsh-llm-pi-ai-account"]
   cfg --> plugin_dsh_base_llm_pi_ai_account
 ```
@@ -320,6 +322,7 @@ flowchart LR
 | `k3-256k` | `k3-256k` |
 | `glm-5.3` | `glm-5.3` |
 | `glm-5.3-flash` | `glm-5.3-flash` |
+| `qwen3.8-flash` | `qwen3.8-flash` |
 | `llm-pi-ai-account` | `@deepseek-ai/dsh-llm-pi-ai-account` |
 
 Source config: [`packages/bundle/base/cordis.patch.yml`](../../packages/bundle/base/cordis.patch.yml).
