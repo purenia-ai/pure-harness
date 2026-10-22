@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-此可选组合包（bundle）挂载自定义插件市场：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件市场索引，Web 端提供插件页的[发现标签页](../../client/ui-plugin-market/README.zh.md)。随包配置默认禁用。
+此可选组合包（bundle）挂载自定义插件市场：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件市场索引，Web 端提供插件页的[发现标签页](../../client/ui-plugin-market/README.zh.md)。本 fork 的 base 组合直接挂载这些行并预置 hub 市场索引，因此该组合包已从 profile 选择中退役：profile 不会重复挂载这些行。
 
 ## 目录
 
@@ -24,7 +24,7 @@ kind: "package-bundle"
 <a id="use-this-package"></a>
 ## 使用此包
 
-打开 Web 侧栏中的**插件**，点击**实验性插件**旁的**更多**，启用**自定义插件市场**；启用后它也会出现在主列表中。页面随后显示**已安装**和**发现**两个标签页；**发现**用于添加索引源并安装其中的组合包。禁用此组合包会移除发现标签页和 `plugin_market` 工具；已保存的索引源保留在 profile 中。
+本 fork 中无需手动启用：插件页开箱即显示**已安装**和**发现**两个标签页，并预置 hub 索引源。在早期版本中选择了本组合包的 profile 会在加载时将其摘除（退役 bundle）；保存在 profile 中的索引源由沿用同一 `plugin-market` 行 id 的 base 行继承。
 
 -----
 
@@ -34,7 +34,7 @@ kind: "package-bundle"
 <details>
 <summary>维护者信息 — 点击展开</summary>
 
-静态 `cordis.patch.yml` 插入 `plugin-market` 服务行和 `ui-plugin-market` 浏览器行；与 `plugin-manager` 一样，服务行在没有 profile 时被禁用。Creator 预设保留其 `tool-plugin-market` 行；该插件只在 `pluginMarket` 已挂载时注册 `plugin_market`，因此没有此组合包时，该行既不等待，也不显示该工具。插件页只在存在 `plugins.tab` 条目时显示标签页，因此无需了解此组合包。
+静态 `cordis.patch.yml` 插入 `plugin-market` 服务行和 `ui-plugin-market` 浏览器行；与 `plugin-manager` 一样，服务行在没有 profile 时被禁用。Creator 预设保留其 `tool-plugin-market` 行；该插件只在 `pluginMarket` 已挂载时注册 `plugin_market`——本 fork 的 base 组合会挂载它，因此该工具在 Creator 会话中默认可用。插件页只在存在 `plugins.tab` 条目时显示标签页，因此无需了解此组合包。
 
 </details>
 
@@ -53,7 +53,7 @@ kind: "package-bundle"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- 目前没有官方插件市场；发现标签页只列出用户添加的索引源。
+- 组合包本身不提供市场内容；发现标签页列出已配置的索引源，本 fork 在 base 组合中预置了 hub 索引。
 
 -----
 

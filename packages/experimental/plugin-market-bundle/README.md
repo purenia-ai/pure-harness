@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This optional bundle mounts custom plugin markets: the Host [`pluginMarket`](../../boot/plugin-market/README.md) service, which reads the plugin market indexes the user adds, and the Web [Discover tab](../../client/ui-plugin-market/README.md) of the Plugins page. Shipped profiles leave it disabled.
+This optional bundle mounts custom plugin markets: the Host [`pluginMarket`](../../boot/plugin-market/README.md) service, which reads the plugin market indexes the user adds, and the Web [Discover tab](../../client/ui-plugin-market/README.md) of the Plugins page. This fork's base composition mounts those rows directly with the hub market index preconfigured, so the bundle is retired from profile selection: a profile never mounts the rows twice.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ This optional bundle mounts custom plugin markets: the Host [`pluginMarket`](../
 <a id="use-this-package"></a>
 ## Use this package
 
-Open **Plugins** in the Web sidebar, select **More** beside **Experimental plugins**, and switch on **Custom plugin markets**; once on, it also appears on the main list. The page then shows the **Installed** and **Discover** tabs; **Discover** adds index sources and installs their bundles. Switching the bundle off removes the Discover tab and the `plugin_market` tool; the saved index sources stay in the profile.
+There is nothing to switch on in this fork: the Plugins page shows the **Installed** and **Discover** tabs out of the box, with the hub index source preconfigured. A profile that selected this bundle in an earlier release drops it on load as a retired bundle; index sources saved in the profile carry over, because the base row keeps the same `plugin-market` id.
 
 -----
 
@@ -34,7 +34,7 @@ Open **Plugins** in the Web sidebar, select **More** beside **Experimental plugi
 <details>
 <summary>Maintainer details — click to expand</summary>
 
-The static `cordis.patch.yml` inserts the `plugin-market` service row, disabled without a profile like `plugin-manager`, and the `ui-plugin-market` browser row. The Creator preset keeps its `tool-plugin-market` row; that plugin registers `plugin_market` only while `pluginMarket` is mounted, so the row neither waits nor shows the tool without this bundle. The Plugins page shows its tabs only when a `plugins.tab` entry exists, so it needs no knowledge of this bundle.
+The static `cordis.patch.yml` inserts the `plugin-market` service row, disabled without a profile like `plugin-manager`, and the `ui-plugin-market` browser row. The Creator preset keeps its `tool-plugin-market` row; that plugin registers `plugin_market` only while `pluginMarket` is mounted — in this fork the base composition mounts it, so the tool is available in Creator sessions by default. The Plugins page shows its tabs only when a `plugins.tab` entry exists, so it needs no knowledge of this bundle.
 
 </details>
 
@@ -53,7 +53,7 @@ Switching the bundle on or off adds or removes one tool schema in Creator sessio
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- There is no official market; Discover lists only the index sources the user adds.
+- The bundle contributes no market content itself; Discover lists the configured index sources, and this fork preconfigures the hub index in its base composition.
 
 -----
 

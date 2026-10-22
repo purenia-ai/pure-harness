@@ -409,6 +409,18 @@ describe('loadProfile', () => {
     })
   })
 
+  it('retires the plugin market bundle whose rows the fork base composition now carries', () => {
+    const anchor = stageInstallation({
+      '@deepseek-ai/dsh-base': { patch: '[]\n' },
+      '@deepseek-ai/dsh-experimental-plugin-market-bundle': { patch: '[]\n' },
+    })
+    const dir = join(tmp(), 'app-profile')
+    initProfile(dir, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-experimental-plugin-market-bundle'])
+    const profile = loadProfileDirectory('t', dir, anchor)
+    expect(profile.layers.map(layer => layer.packageName)).toEqual(['@deepseek-ai/dsh-base'])
+    expect(readProfileManifest('t', dir).dsh?.profile?.bundles).toEqual(['@deepseek-ai/dsh-base'])
+  })
+
   it.each(['missing package', 'invalid manifest', 'not a bundle', 'missing patch', 'invalid patch'])(
     'skips a bundle with %s, retains selections, and retries it on reread', async (failure) => {
       const anchor = stageInstallation({

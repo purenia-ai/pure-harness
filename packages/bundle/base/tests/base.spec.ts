@@ -47,13 +47,17 @@ describe('dsh-base bundle', () => {
     expect(rows.find(row => row.id === 'llm-deepseek-account-purehub')?.config).toMatchObject({
       baseURL: 'https://hub.puresnake.com/v1', authScheme: 'bearer', maxTokens: 131072,
     })
-    // The gateway's listing decides availability; the prefix map sends `gpt` ids to
-    // llm-pi-ai-account, and `models` fills in what the bare listing entries omit.
+    // The gateway's listing carries no modality field, so every declared route states its own.
     expect(rows.find(row => row.id === 'llm-deepseek-account-purehub')?.config).toMatchObject({
       otherRoutePrefixes: ['gpt'],
       models: [
-        { id: 'deepseek-flash' }, { id: 'deepseek-v4-pro' }, { id: 'k3' },
-        { id: 'k3-256k' }, { id: 'glm-5.3' }, { id: 'glm-5.3-flash' },
+        { id: 'deepseek-flash', inputModalities: ['text', 'image'] },
+        { id: 'deepseek-v4-pro', inputModalities: ['text'] },
+        { id: 'k3', inputModalities: ['text', 'image'] },
+        { id: 'k3-256k', inputModalities: ['text', 'image'] },
+        { id: 'glm-5.3', inputModalities: ['text'] },
+        { id: 'glm-5.3-flash', inputModalities: ['text', 'image'] },
+        { id: 'qwen3.8-flash', inputModalities: ['text', 'image'] },
       ],
     })
     expect(rows.find(row => row.id === 'llm-deepseek-account')).toBeUndefined()
@@ -62,10 +66,19 @@ describe('dsh-base bundle', () => {
     expect(rows.find(row => row.id === 'agent-default-model')?.config).toMatchObject({
       provider: 'deepseek-account', model: 'deepseek-flash',
     })
-    // The gateway's listing carries no modality field, so every declared route states its own.
     expect(rows.find(row => row.id === 'llm-pi-ai-account')?.config).toMatchObject({
       providers: { 'purehub-openai': { models: expect.arrayContaining([{ id: 'gpt-6.1-sol', input: ['text', 'image'] }]) } },
     })
+    // The fork ships its own plugin market built in: the hub index preconfigured, with account
+    // authentication for index reads (plugin-market) and package installs (plugin-manager).
+    expect(rows.find(row => row.id === 'plugin-market')?.config).toMatchObject({
+      indexes: ['https://hub.puresnake.com/market/index.json'],
+      authenticatedOrigins: ['https://hub.puresnake.com'],
+    })
+    expect(rows.find(row => row.id === 'plugin-manager')?.config).toMatchObject({
+      authenticatedOrigins: ['https://hub.puresnake.com'],
+    })
+    expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-plugin-market')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')

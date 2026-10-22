@@ -12,6 +12,8 @@ flowchart LR
   cfg --> plugin_dsh_base_tool_plugin_manager
   plugin_dsh_base_plugin_manager["plugin-manager<br/>@deepseek-ai/dsh-plugin-manager"]
   cfg --> plugin_dsh_base_plugin_manager
+  plugin_dsh_base_plugin_market["plugin-market<br/>@deepseek-ai/dsh-plugin-market"]
+  cfg --> plugin_dsh_base_plugin_market
   plugin_dsh_base_timer["timer<br/>@deepseek-ai/cordis-plugin-timer"]
   cfg --> plugin_dsh_base_timer
   plugin_dsh_base_hmr["hmr<br/>@deepseek-ai/dsh-hmr"]
@@ -222,6 +224,7 @@ flowchart LR
 | --- | --- |
 | `tool-plugin-manager` | `@deepseek-ai/dsh-plugin-manager/tools` |
 | `plugin-manager` | `@deepseek-ai/dsh-plugin-manager` |
+| `plugin-market` | `@deepseek-ai/dsh-plugin-market` |
 | `timer` | `@deepseek-ai/cordis-plugin-timer` |
 | `hmr` | `@deepseek-ai/dsh-hmr` |
 | `llm` | `@deepseek-ai/dsh-llm` |

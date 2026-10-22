@@ -2566,7 +2566,7 @@ export interface PlanModeConfig {
 ## `@deepseek-ai/dsh-plugin-manager`
 
 - `inject`: `loader` · `profileContext`
-- `source`: [`packages/boot/plugin-manager/src/index.ts:42`](../packages/boot/plugin-manager/src/index.ts)
+- `source`: [`packages/boot/plugin-manager/src/index.ts:43`](../packages/boot/plugin-manager/src/index.ts)
 
 ```ts config-catalog
 /** The pnpm executable, registries, and limits for diagnostics, lookups and connection checks. */
@@ -2591,6 +2591,12 @@ export interface Config {
    * unless that is npm's own registry or one of these.
    */
   fallbackRegistries?: string[]
+  /**
+   * Origins whose registry lookups and package downloads authenticate with `deepseekAccount.resolveToken`: each pnpm
+   * run receives the fresh token as a host-scoped npm-config environment entry, and an install needing a grant none
+   * exists for fails with `sign-in-required` before pnpm starts. Origins outside this list never receive a token.
+   */
+  authenticatedOrigins?: string[]
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-plugin-manager -->
@@ -2602,13 +2608,15 @@ export interface Config {
 
 - `inject`: `pluginManager`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/boot/plugin-market/src/index.ts:32`](../packages/boot/plugin-market/src/index.ts)
+- `source`: [`packages/boot/plugin-market/src/index.ts:34`](../packages/boot/plugin-market/src/index.ts)
 
 ```ts config-catalog
 /** Index sources and fetch limits. */
 export interface Config {
   /** Index URLs in display order; Settings and `setIndexes` write this field without remounting the service. */
   indexes: Volatile<string[]>
+  /** Origins whose index reads authenticate with `deepseekAccount.resolveToken`; unsigned reads fail fast instead of fetching. */
+  authenticatedOrigins: string[]
   /** Deadline for one index fetch, including the body. */
   fetchTimeoutMs: number
   /** Largest accepted index body in bytes. */

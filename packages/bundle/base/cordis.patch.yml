@@ -20,6 +20,21 @@
     - id: plugin-manager
       name: '@deepseek-ai/dsh-plugin-manager'
       disabled: !!js "!ctx.get('profileContext')"
+      config:
+        # Installs from the hub registry or tarballs authenticate with the account token.
+        authenticatedOrigins:
+          - 'https://hub.puresnake.com'
+
+    # The fork's own plugin market, built in: the Discover tab reads the hub
+    # index, and hub-origin reads carry the account token.
+    - id: plugin-market
+      name: '@deepseek-ai/dsh-plugin-market'
+      disabled: !!js "!ctx.get('profileContext')"
+      config:
+        indexes:
+          - 'https://hub.puresnake.com/market/index.json'
+        authenticatedOrigins:
+          - 'https://hub.puresnake.com'
 
     - id: timer
       name: '@deepseek-ai/cordis-plugin-timer'
