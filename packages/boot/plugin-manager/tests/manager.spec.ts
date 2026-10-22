@@ -1699,7 +1699,7 @@ const AUTH_ENV_KEY = 'npm_config_//hub.puresnake.com/:_authToken'
 
 /** A pnpm run that fails immediately; the auth assertions read the environment it was called with. */
 function probeRun(dir: string) {
-  return vi.spyOn(operations, 'runProfilePnpm').mockResolvedValue({ exitCode: 1, output: 'auth probe', truncated: false, logPath: join(dir, 'pnpm.log'), kind: 'other' })
+  return vi.spyOn(operations, 'runProfilePnpm').mockResolvedValue({ exitCode: 1, output: 'auth probe', truncated: false, logPath: join(dir, 'pnpm.log') })
 }
 
 it('authenticates pnpm runs against a configured origin for tarball and registry installs', async () => {
