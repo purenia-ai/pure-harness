@@ -36,11 +36,21 @@ function entry(name: string, fields: Record<string, unknown> = {}, versions: Rec
   return { name, versions, ...fields }
 }
 
-async function mount(config: Partial<{ indexes: string[]; fetchTimeoutMs: number; maxBytes: number; cacheTtlMs: number }> = {}, options: {
+interface MountConfig {
+  indexes?: string[]
+  authenticatedOrigins?: string[]
+  fetchTimeoutMs?: number
+  maxBytes?: number
+  cacheTtlMs?: number
+}
+
+async function mount(config: MountConfig = {}, options: {
   bundles?: BundleInfo[]
   exemptions?: Record<string, string[]>
   settings?: (ns: string, patch: object) => Promise<void>
   entryId?: boolean
+  /** Present mounts a stub account: a string is its grant token, null is a signed-out account. */
+  accountToken?: string | null
 } = {}) {
   const ctx = new Context()
   onTestFinished(() => ctx.fiber.dispose())
@@ -50,6 +60,14 @@ async function mount(config: Partial<{ indexes: string[]; fetchTimeoutMs: number
     listVersionExemptions() { return { exemptions: options.exemptions ?? {}, warnings: [] } }
   }
   await ctx.plugin(Manager)
+  if (options.accountToken !== undefined) {
+    const token = options.accountToken
+    class Account extends Service {
+      constructor(inner: Context) { super(inner, 'deepseekAccount') }
+      resolveToken() { return Promise.resolve(token ?? undefined) }
+    }
+    await ctx.plugin(Account)
+  }
   if (options.settings !== undefined) {
     const update = options.settings
     class Settings extends Service {
@@ -536,4 +554,44 @@ it('gives a new document a new fetch time within the same millisecond', async ()
   const { market } = await mount()
   expect((await read(market, URL_A)).fetchedAt).toBe(1000)
   expect((await read(market, URL_A, true)).fetchedAt).toBe(1001)
+})
+
+// Authenticated index origins (the fork's own market at hub.puresnake.com).
+const HUB = 'https://hub.puresnake.com'
+const URL_AUTHED = `${HUB}/market/index.json`
+
+it('attaches the account token when fetching an authenticated index origin', async () => {
+  const fetch = serve(json(index()))
+  const { market } = await mount({ indexes: [URL_AUTHED], authenticatedOrigins: [HUB] }, { accountToken: 'tok-1' })
+  await read(market, URL_AUTHED)
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(new Headers(fetch.mock.calls[0]![1]?.headers).get('authorization')).toBe('Bearer tok-1')
+})
+
+it('sends no token for origins outside authenticatedOrigins', async () => {
+  const fetch = serve(json(index()))
+  const { market } = await mount({ authenticatedOrigins: [HUB] }, { accountToken: 'tok-1' })
+  await read(market, URL_A)
+  expect(new Headers(fetch.mock.calls[0]![1]?.headers).get('authorization')).toBeNull()
+})
+
+it('fails an authenticated origin with sign-in-required without fetching when no grant exists', async () => {
+  const fetch = serve()
+  const { market } = await mount({ indexes: [URL_AUTHED], authenticatedOrigins: [HUB] }, { accountToken: null })
+  expect(await failure(read(market, URL_AUTHED))).toMatchObject({ code: 'plugin-market/sign-in-required', details: { url: URL_AUTHED } })
+  expect(fetch).not.toHaveBeenCalled()
+  expect(market.listIndexes()[0]?.error).toContain('sign in')
+})
+
+it('fetches an authenticated origin without a token when no account service is mounted', async () => {
+  const fetch = serve(json(index()))
+  const { market } = await mount({ indexes: [URL_AUTHED], authenticatedOrigins: [HUB] })
+  await read(market, URL_AUTHED)
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(new Headers(fetch.mock.calls[0]![1]?.headers).get('authorization')).toBeNull()
+})
+
+it('defaults authenticatedOrigins to none', async () => {
+  const { config } = await mount({}, { accountToken: 'tok-1' })
+  expect(config.authenticatedOrigins).toEqual([])
 })

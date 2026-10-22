@@ -11,6 +11,8 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'plugin-market/unknown-index': { readonly url: string }
     /** The index could not be fetched: network failure, timeout, redirect, non-2xx status, or a body over the size limit. */
     'plugin-market/fetch-failed': { readonly url: string; readonly reason: string }
+    /** The origin is one of `authenticatedOrigins` and no usable account grant exists; no request was sent. */
+    'plugin-market/sign-in-required': { readonly url: string }
     /** The fetched document is not valid format-1 JSON; `path` names the offending JSON value. */
     'plugin-market/invalid-index': { readonly url: string; readonly path: string; readonly reason: string }
     /** A search page request is out of range; `field` names the offending query field. */

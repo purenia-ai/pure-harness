@@ -29,6 +29,7 @@ kind: "package-reference"
 | 配置 | 默认值 | 含义 |
 |---|---|---|
 | `indexes` | `[]` | 按显示顺序排列的索引 URL。可用的 URL 采用规范形式，使用 `http:` 或 `https:`，不含凭据或片段。该字段是 volatile 字段：发现区、设置和 `setIndexes` 修改它时，不会重新挂载本服务或 `plugin-manager`。 |
+| `authenticatedOrigins` | `[]` | 其索引读取需要账号服务鉴权的 origin：获取时携带 `deepseekAccount.resolveToken` 现取的新鲜 `Authorization: Bearer` token；origin 无可用授权时以 `plugin-market/sign-in-required` 快速失败且不发送请求。不在此列表中的 origin 永远不会收到 token。 |
 | `fetchTimeoutMs` | `15000` | 单次索引获取（包括响应体）的时限。 |
 | `maxBytes` | `134217728` | 接受的最大索引响应体。 |
 | `cacheTtlMs` | `600000` | 成功读取的文档的缓存时长。 |
@@ -57,7 +58,7 @@ Remote 方法如下：
 
 文本匹配包名、作者、关键词，以及标题、描述、分类标题和标签标题的所有语言。文本被拆分为由字母、组合符号和数字构成的连续片段；由中文、日文或韩文字符构成的片段变为相邻的两字组合及其最后一个字符，因此不带空格书写的文本无需词典也能匹配。词在 NFKC 规范化后不区分大小写地比较。查询中的每个词都必须匹配某个已索引的词，可以是前缀，或者在词长至少四个字符时，编辑距离不超过其长度的五分之一（四舍五入），且最多为 2。名称和标题匹配的权重是其他位置的三倍，关键词匹配是两倍。
 
-失败使用 `plugin-market/invalid-query`、`plugin-market/invalid-index-url`、`plugin-market/unknown-index`、`plugin-market/fetch-failed` 和 `plugin-market/invalid-index`；最后一种携带违规值的 JSON 路径。
+失败使用 `plugin-market/invalid-query`、`plugin-market/invalid-index-url`、`plugin-market/unknown-index`、`plugin-market/fetch-failed`、`plugin-market/sign-in-required` 和 `plugin-market/invalid-index`；最后一种携带违规值的 JSON 路径。
 
 `plugin_market` 工具列出已配置的索引，按索引顺序分页列出某个索引的插件，或在给出 `query` 时按最佳匹配分页列出，或分页列出某个插件的版本。它不需要批准，因为它只读取用户配置的源且不做任何改动；它返回的每个版本都携带要传给 `plugin_manager` 的 `install_bundle` 的 `target` 和 `registry`，`install_bundle` 仍保留自己的批准要求。该工具不能修改索引源。Creator 模式在 `plugin_manager` 旁边保留它的行，该行只在 `pluginMarket` 已挂载时注册工具；其他预设保持禁用。
 

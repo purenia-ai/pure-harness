@@ -11,9 +11,11 @@ import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typer
 import { normalizeIndexUrl } from './index-url.ts'
 import { parseIndexInWorker } from './parse-thread.ts'
 import { MarketSearch } from './search.ts'
-// Type-only: the `pluginManager` service, `settings.update`, and the Loader's `loader/volatile-update` event.
+// Type-only: the `pluginManager` service, `settings.update`, the Loader's `loader/volatile-update` event,
+// and the optional `deepseekAccount` service read with `ctx.get`.
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-deepseek-account'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {
   MarketCompatibility, MarketIndexSummary, MarketInstallation, MarketListingEntry, MarketListingVersion, MarketQuery, MarketSearchResult,
@@ -32,6 +34,8 @@ declare module '@deepseek-ai/cordis' {
 export interface Config {
   /** Index URLs in display order; Settings and `setIndexes` write this field without remounting the service. */
   indexes: Volatile<string[]>
+  /** Origins whose index reads authenticate with `deepseekAccount.resolveToken`; unsigned reads fail fast instead of fetching. */
+  authenticatedOrigins: string[]
   /** Deadline for one index fetch, including the body. */
   fetchTimeoutMs: number
   /** Largest accepted index body in bytes. */
@@ -71,12 +75,22 @@ interface CachedIndex {
   readonly expiresAt: number
 }
 
+/** Normalize a configured origin; rejects an unparseable entry at mount instead of at first fetch. */
+function originOf(configured: string): string {
+  try {
+    return new URL(configured).origin
+  } catch (error) {
+    throw new Error(`plugin-market config: authenticatedOrigins entry ${JSON.stringify(configured)} is not a parseable URL`, { cause: error })
+  }
+}
+
 /** Fetches, validates, and caches configured market indexes; annotates entries with the profile's installation facts. */
 export default class PluginMarket extends TypertRemoteService {
   static inject = ['pluginManager']
 
   static Config = z.object({
     indexes: z.array(z.string().pattern(/^https?:\/\/\S+$/u)).default([]).volatile(),
+    authenticatedOrigins: z.array(z.string().pattern(/^https?:\/\/\S+$/u)).default([]),
     fetchTimeoutMs: z.natural().min(1).max(MAX_TIMER_DELAY_MS).default(15000),
     maxBytes: z.natural().min(1).default(128 * 1024 * 1024),
     cacheTtlMs: z.natural().default(600000),
@@ -87,10 +101,13 @@ export default class PluginMarket extends TypertRemoteService {
   private readonly pending = new Map<string, Promise<IndexDocument>>()
   private readonly errors = new Map<string, string>()
   private readonly entryId: string | undefined
+  /** Normalized origins whose index reads authenticate with the account token. */
+  private readonly authenticatedOrigins: ReadonlySet<string>
 
   constructor(ctx: Context, private readonly config: Config) {
     super(ctx, 'pluginMarket')
     this.entryId = ctx.fiber.entry?.options.id
+    this.authenticatedOrigins = new Set(config.authenticatedOrigins.map(originOf))
     ctx.on('loader/volatile-update', () => {
       const configured = new Set(this.sources().flatMap(source => source.error === undefined ? [source.url] : []))
       for (const url of [...this.cache.keys(), ...this.errors.keys()]) {
@@ -265,9 +282,21 @@ export default class PluginMarket extends TypertRemoteService {
     const signal = AbortSignal.any([this.lifetime.signal, AbortSignal.timeout(this.config.fetchTimeoutMs)])
     const failed = (reason: string, cause?: unknown): RemoteError =>
       new RemoteError('plugin-market/fetch-failed', `Could not fetch ${url}: ${reason}`, { url, reason }, { cause })
+    const headers: Record<string, string> = { accept: 'application/json' }
+    if (this.authenticatedOrigins.has(new URL(url).origin)) {
+      const account = this.ctx.get('deepseekAccount')
+      if (account !== undefined) {
+        // resolveToken refreshes when needed and answers undefined for a signed-out or revoked grant.
+        const token = await account.resolveToken(url)
+        if (token === undefined) {
+          throw new RemoteError('plugin-market/sign-in-required', `${url}: sign in to read this market index`, { url })
+        }
+        headers.authorization = `Bearer ${token}`
+      }
+    }
     let response: Response
     try {
-      response = await fetch(url, { signal, redirect: 'error', headers: { accept: 'application/json' } })
+      response = await fetch(url, { signal, redirect: 'error', headers })
     } catch (error) {
       throw failed(causeChainOf(error), error)
     }

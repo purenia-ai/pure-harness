@@ -13,6 +13,7 @@
     { "path": "../../../vendor/schemastery" },
     { "path": "../app-boot" },
     { "path": "../plugin-manager" },
+    { "path": "../../credentials/deepseek-account" },
     { "path": "../../util/plugin-market-index" },
     { "path": "../../util/package-manifest" },
     { "path": "../../util/timeout" },

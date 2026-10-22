@@ -29,6 +29,7 @@ The optional [custom plugin markets bundle](../../experimental/plugin-market-bun
 | Config | Default | Meaning |
 |---|---|---|
 | `indexes` | `[]` | Index URLs in display order. A usable URL is in canonical form and uses `http:` or `https:`, without credentials or fragment. The field is volatile: Discover, Settings, and `setIndexes` change it without remounting this service or `plugin-manager`. |
+| `authenticatedOrigins` | `[]` | Origins whose index reads authenticate with the account service: the fetch carries the fresh `Authorization: Bearer` token from `deepseekAccount.resolveToken`, and an origin without a usable grant fails fast with `plugin-market/sign-in-required` and sends no request. Origins outside this list never receive a token. |
 | `fetchTimeoutMs` | `15000` | Deadline for one index fetch, including its body. |
 | `maxBytes` | `134217728` | Largest accepted index body. |
 | `cacheTtlMs` | `600000` | Lifetime of a successfully read document. |
@@ -57,7 +58,7 @@ A query selects plugins with every one of its conditions:
 
 Text matches the package name, author, keywords, and every language of the title, description, and category and label titles. It is split into runs of letters, marks, and digits; a run of Chinese, Japanese, or Korean characters becomes its overlapping character pairs and its last character, so text written without spaces matches without a dictionary. Words are compared after NFKC normalization and without case. Every query word must match an indexed word as a prefix or, from four characters, within an edit distance of one fifth of its length rounded to the nearest integer, at most 2. Name and title matches weigh three times, and keyword matches twice, a match elsewhere.
 
-Failures use `plugin-market/invalid-query`, `plugin-market/invalid-index-url`, `plugin-market/unknown-index`, `plugin-market/fetch-failed`, and `plugin-market/invalid-index`; the last carries the JSON path of the offending value.
+Failures use `plugin-market/invalid-query`, `plugin-market/invalid-index-url`, `plugin-market/unknown-index`, `plugin-market/fetch-failed`, `plugin-market/sign-in-required`, and `plugin-market/invalid-index`; the last carries the JSON path of the offending value.
 
 The `plugin_market` tool lists the configured indexes, pages the plugins of one index in index order or, with a `query`, by best match, or pages one plugin's versions. It requires no approval because it reads only the sources the user configured and changes nothing; each version it returns carries the `target` and `registry` to pass to `plugin_manager`'s `install_bundle`, which keeps its own approval. The tool cannot change index sources. Creator mode keeps its row beside `plugin_manager`, and the row registers the tool only while `pluginMarket` is mounted; other presets keep it disabled.
 

@@ -62,12 +62,16 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/cordis-plugin-loader": "workspace:~",
+    "@deepseek-ai/dsh-deepseek-account": "workspace:*",
     "@deepseek-ai/dsh-plugin-manager": "workspace:*",
     "@deepseek-ai/dsh-settings": "workspace:*",
     "@deepseek-ai/dsh-tools": "workspace:*",
     "@deepseek-ai/dsh-typert-protocol": "workspace:*"
   },
   "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-deepseek-account": {
+      "optional": true
+    },
     "@deepseek-ai/dsh-settings": {
       "optional": true
     }
@@ -78,6 +82,7 @@
     "@deepseek-ai/cosmokit": "workspace:~",
     "@deepseek-ai/dsh-app-boot": "workspace:*",
     "@deepseek-ai/dsh-config-editor": "workspace:*",
+    "@deepseek-ai/dsh-deepseek-account": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
     "@deepseek-ai/dsh-plugin-manager": "workspace:*",
     "@deepseek-ai/dsh-settings": "workspace:*",
