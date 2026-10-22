@@ -228,6 +228,7 @@ export const zh = {
   reasonIncompatibleInstall: '请安装与当前 DSH 兼容的插件版本。',
   reasonIncompatibleInstalled: '请卸载后重新安装与当前 DSH 兼容的版本。',
   reasonOperationError: 'Host 报告了一个错误',
+  reasonSignInRequired: '登录后才能从该来源安装。',
 } satisfies Record<string, string>
 
 /** Plugin manager locale key union. */
@@ -456,4 +457,5 @@ export const en = {
   reasonIncompatibleInstall: 'Install a plugin version compatible with this DSH.',
   reasonIncompatibleInstalled: 'Uninstall it and install a version compatible with this DSH.',
   reasonOperationError: 'The Host reported an error.',
+  reasonSignInRequired: 'Sign in to install from this source.',
 } satisfies Record<PluginManagerLocaleKey, string>

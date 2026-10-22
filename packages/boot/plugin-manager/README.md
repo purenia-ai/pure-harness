@@ -83,6 +83,7 @@ The CLI exposes `dsh plugin --profile <profile> version-exemptions`, `allow-vers
 | `githubConnectionTimeoutMs` | `5000` | Deadline for the GitHub repository check before installation, in milliseconds. |
 | `registry` | pnpm's own | The registry lookups and installations ask first, as an http(s) URL; absent, the one pnpm's own configuration names. |
 | `fallbackRegistries` | `['https://registry.npmmirror.com/']` | Registries asked in turn, as http(s) URLs, while the one before is unreachable or holds no copy of the package; pnpm's own registry joins the order only while it names npm's own registry or one of these. |
+| `authenticatedOrigins` | `[]` | Origins whose registry lookups and package downloads authenticate with the account service: each pnpm run gets the fresh token from `deepseekAccount.resolveToken` as a host-scoped npm-config environment entry, and an installation needing a grant none exists for fails with `sign-in-required` before pnpm starts. Origins outside this list never receive a token, and the token is never written to the profile. |
 | `outputBytes` | `16384` | Maximum pnpm diagnostic bytes returned per operation; the full output remains in the returned log path. |
 | `lockWaitMs` | `120000` | Maximum time in milliseconds to acquire the profile write lock. |
 | `idleTimeoutMs` | `600000` | Maximum time in milliseconds a service package run may capture no output before the manager terminates it; a run with inherited descriptors (`dsh plugin`) is never bound. |

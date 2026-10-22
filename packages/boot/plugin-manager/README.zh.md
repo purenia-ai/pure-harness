@@ -83,6 +83,7 @@ CLI 提供 `dsh plugin --profile <profile> version-exemptions`、`allow-version 
 | `githubConnectionTimeoutMs` | `5000` | 安装前 GitHub 仓库连接检查的时限，单位毫秒。 |
 | `registry` | pnpm 自身配置 | 查询与安装首先询问的注册表，http(s) URL；缺省为 pnpm 自身配置指定的那个。 |
 | `fallbackRegistries` | `['https://registry.npmmirror.com/']` | 前一个注册表不可达或没有该包副本时依次询问的注册表，http(s) URL；pnpm 自身的注册表只在它指向 npm 官方源或这里的某一个时才进入顺序。 |
+| `authenticatedOrigins` | `[]` | 其注册表查询与包下载需要账号服务鉴权的 origin：每次 pnpm 运行通过 `deepseekAccount.resolveToken` 现取的新鲜 token 以按 host 划分的 npm-config 环境变量注入；安装需要授权而不存在可用授权时，在 pnpm 启动前以 `sign-in-required` 失败。不在此列表中的 origin 永远不会收到 token，且 token 从不写入 profile。 |
 | `outputBytes` | `16384` | 每次操作返回的 pnpm 诊断字节上限；完整输出保留在返回的日志路径中。 |
 | `lockWaitMs` | `120000` | 获取 profile 写锁的最长等待毫秒数。 |
 | `idleTimeoutMs` | `600000` | service 包操作允许持续无捕获输出的最长毫秒数，达到即被管理器终止；继承描述符运行的 `dsh plugin` 不受此上界约束。 |

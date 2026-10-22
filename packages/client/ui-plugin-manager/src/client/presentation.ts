@@ -59,6 +59,7 @@ const CODE_KEYS = {
   'stale-approval': 'reasonStaleApproval',
   'incompatible-version': 'reasonIncompatibleVersionUnnamed',
   'operation-error': 'reasonOperationError',
+  'sign-in-required': 'reasonSignInRequired',
 } satisfies Record<ManagementError['code'], PluginManagerLocaleKey>
 
 /** The sentence a failed action opens with, by what was being done. */

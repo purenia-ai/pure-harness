@@ -24,6 +24,7 @@ const ERROR_STEPS: Record<ManagementError['code'], string> = {
   'stale-approval': 'Call install_bundle again without approvedBuilds to read the current pendingBuilds.',
   'incompatible-version': 'Install a version compatible with the running DSH. A version exemption needs the user\'s explicit acceptance of crash and data-loss risk.',
   'operation-error': 'Report the diagnostic to the user; retry only after its cause is addressed.',
+  'sign-in-required': 'The source requires the deployment account; ask the user to sign in, then retry.',
 }
 
 /** What the model does next for each package-manager failure. */

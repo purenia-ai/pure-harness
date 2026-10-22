@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { execa } from 'execa'
-import type { Context } from '@deepseek-ai/cordis'
+import { Service, type Context } from '@deepseek-ai/cordis'
 import { afterAll, beforeAll, expect, it, onTestFinished, vi } from 'vitest'
 import {
   boot, composeEntries, initProfile, loadProfileDirectory, readProfilePatches, readProfileManifest,
@@ -30,7 +30,7 @@ let restoreGitCommandLineConfig: () => void
 beforeAll(() => { restoreGitCommandLineConfig = isolateGitCommandLineConfig() })
 afterAll(() => { restoreGitCommandLineConfig() })
 
-async function fixture(reload: 'live' | 'startup' = 'live', overlay = false, prepare?: (ctx: Context) => void, config: Config = {}, packageManager?: ProfileContext['packageManager'], prepareFiles?: (dir: string) => void, sourceInstallation = false) {
+async function fixture(reload: 'live' | 'startup' = 'live', overlay = false, prepare?: (ctx: Context) => void, config: Config = {}, packageManager?: ProfileContext['packageManager'], prepareFiles?: (dir: string) => void, sourceInstallation = false, accountToken?: string | null) {
   const temporaryHome = mkdtempSync(join(tmpdir(), 'plugin-manager-'))
   let owner: Context | undefined
   onTestFinished(async () => { await owner?.fiber.dispose(); rmSync(temporaryHome, { recursive: true, force: true }) })
@@ -79,6 +79,13 @@ async function fixture(reload: 'live' | 'startup' = 'live', overlay = false, pre
   const registry = vi.spyOn(operations, 'readProfileRegistry').mockResolvedValue('https://registry.npmjs.org/')
   const connection = vi.spyOn(githubConnection, 'checkGithubConnection').mockResolvedValue(undefined)
   onTestFinished(() => { registry.mockRestore(); connection.mockRestore() })
+  if (accountToken !== undefined) {
+    const token = accountToken
+    await ctx.plugin(class extends Service {
+      constructor(inner: Context) { super(inner, 'deepseekAccount') }
+      resolveToken() { return Promise.resolve(token ?? undefined) }
+    })
+  }
   let stopHmr = async () => {}
   if (reload === 'live') {
     await ctx.plugin(Timer)
@@ -1684,4 +1691,66 @@ it.each(['absent', 'bundle', 'not-bundle', 'unreadable'])('keeps a missing sourc
   })
   expect((await manager.listBundles()).find(item => item.name === name)?.error?.diagnostic).toContain('restore the checkout')
   expect((await manager.listBundles()).find(item => item.name === name)?.installTarget).toBeUndefined()
+})
+
+// Authenticated install origins: the fork's market host carries the account Bearer token into pnpm runs.
+const AUTH_HUB = 'https://hub.puresnake.com'
+const AUTH_ENV_KEY = 'npm_config_//hub.puresnake.com/:_authToken'
+
+/** A pnpm run that fails immediately; the auth assertions read the environment it was called with. */
+function probeRun(dir: string) {
+  return vi.spyOn(operations, 'runProfilePnpm').mockResolvedValue({ exitCode: 1, output: 'auth probe', truncated: false, logPath: join(dir, 'pnpm.log'), kind: 'other' })
+}
+
+it('authenticates pnpm runs against a configured origin for tarball and registry installs', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, 'tok-1')
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  const tarball = await manager.installBundle(`${AUTH_HUB}/market/pkg/test-bundle-1.0.0.tgz`)
+  expect(tarball.application).toBe('failed')
+  expect(pnpm.mock.calls[0]![2].env).toMatchObject({ [AUTH_ENV_KEY]: 'tok-1' })
+  pnpm.mockClear()
+  await manager.installBundle('test-bundle', { registry: `${AUTH_HUB}/npm/` })
+  expect(pnpm.mock.calls[0]![2].env).toMatchObject({ [AUTH_ENV_KEY]: 'tok-1' })
+})
+
+it('refuses an authenticated install without a grant before pnpm starts', async () => {
+  const { manager } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, null)
+  const pnpm = vi.spyOn(operations, 'runProfilePnpm')
+  onTestFinished(() => { pnpm.mockRestore() })
+  const result = await manager.installBundle(`${AUTH_HUB}/market/pkg/test-bundle-1.0.0.tgz`)
+  expect(result).toMatchObject({ application: 'failed', error: { code: 'sign-in-required' } })
+  expect(pnpm).not.toHaveBeenCalled()
+})
+
+it('adds no credentials when no account service is mounted', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] })
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  await manager.installBundle(`${AUTH_HUB}/market/pkg/test-bundle-1.0.0.tgz`)
+  expect(pnpm).toHaveBeenCalledOnce()
+  expect(pnpm.mock.calls[0]![2].env ?? {}).not.toHaveProperty(AUTH_ENV_KEY)
+})
+
+it('adds no credentials for origins outside authenticatedOrigins', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, 'tok-1')
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  await manager.installBundle('https://files.example.com/bundles/test-bundle-1.0.0.tgz')
+  expect(pnpm.mock.calls[0]![2].env ?? {}).not.toHaveProperty(AUTH_ENV_KEY)
+})
+
+it('authenticates the registry lookup during inspection and sends nothing while signed out', async () => {
+  const answer = JSON.stringify({ name: 'test-bundle', version: '1.0.0', dsh: { bundle: { patch: './cordis.patch.yml' } } })
+  const signedIn = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, 'tok-1')
+  const view = vi.spyOn(operations, 'viewProfilePackage').mockResolvedValue({ exitCode: 0, stdout: answer, stderr: '', timedOut: false })
+  onTestFinished(() => { view.mockRestore() })
+  await signedIn.manager.inspect('test-bundle', { registry: `${AUTH_HUB}/npm/` })
+  expect(view.mock.calls[0]![2]).toMatchObject({ env: { [AUTH_ENV_KEY]: 'tok-1' } })
+  view.mockClear()
+  await signedIn.ctx.fiber.dispose()
+
+  const signedOut = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, null)
+  await signedOut.manager.inspect('test-bundle', { registry: `${AUTH_HUB}/npm/` })
+  expect(view.mock.calls[0]![2].env ?? {}).not.toHaveProperty(AUTH_ENV_KEY)
 })
