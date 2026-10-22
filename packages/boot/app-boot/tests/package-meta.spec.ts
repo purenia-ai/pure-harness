@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readPluginMeta, resolvePluginResource } from '../src/package-meta.ts'
 import { installRuntimeInterception } from '../src/profile-resolution/resolver.ts'
 import { registerHooksThreadStacks } from './hooks-thread-stack.ts'
+import { symlinkSupported } from './symlink-capability.ts'
 
 let root: string
 let dir: string
@@ -273,7 +274,8 @@ describe('plugin locale display metadata', () => {
     }
   })
 
-  it.each(['manifest', 'export'])('refuses a %s icon file symlink owned by another package', (source) => {
+  // Both cases construct a foreign symlink: hosts without symlink privilege (Windows without Developer Mode) skip.
+  it.skipIf(!symlinkSupported).each(['manifest', 'export'])('refuses a %s icon file symlink owned by another package', (source) => {
     manifest({ './package.json': './package.json', './icon': './icon.svg' }, source === 'manifest' ? { icon: './icon.svg' } : {})
     const foreign = join(root, 'foreign-package', 'icon.svg')
     file(foreign, '<svg/>')

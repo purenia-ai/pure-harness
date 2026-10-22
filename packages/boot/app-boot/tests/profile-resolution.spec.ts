@@ -29,6 +29,7 @@ import {
   type RuntimeResolution,
 } from '../src/profile.ts'
 import { registerHooksThreadStacks } from './hooks-thread-stack.ts'
+import { symlinkSupported } from './symlink-capability.ts'
 
 const roots: string[] = []
 const registrations: RuntimeInterception[] = []
@@ -2038,7 +2039,8 @@ describe('runtime resolution', { concurrent: false }, () => {
     },
   )
 
-  it('excludes profile symlinks to files from linked roots', async () => {
+  it('excludes profile symlinks to files from linked roots', async (context) => {
+    context.skip(!symlinkSupported, 'this host cannot create symlinks (Windows needs Developer Mode or an elevated token), so the case cannot be constructed')
     const f = fixture()
     const modules = join(f.profile.dir, 'node_modules')
     const target = join(f.root, 'work', 'file.cjs')

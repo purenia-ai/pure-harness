@@ -12,6 +12,7 @@ import {
   PROFILE_COMPATIBILITY_FILENAME, PluginPackages, boot, getDshRuntimeVersion,
   prepareProfileEntries, prepareProfilePatches, type ProfileContext,
 } from '../src/index.ts'
+import { symlinkSupported } from './symlink-capability.ts'
 
 const runtime = getDshRuntimeVersion()
 
@@ -270,22 +271,22 @@ describe('manifest resolution', () => {
     expect(warn.mock.calls.flat().map(String).join(' ')).toContain('absent')
   })
 
-  it.each([
-    ['an unreadable manifest', (f: ReturnType<typeof fixture>) => {
-      f.plugin('denied-plugin')
-      rmSync(join(f.dir, 'node_modules', 'denied-plugin', 'package.json'))
-      mkdirSync(join(f.dir, 'node_modules', 'denied-plugin', 'package.json'))
-    }],
-    ['a module path that loops', (f: ReturnType<typeof fixture>) => {
-      f.plugin('denied-plugin')
-      symlinkSync('loop.mjs', join(f.dir, 'node_modules', 'denied-plugin', 'loop.mjs'))
-    }],
-  ])('refuses a row whose %s cannot be read', (_label, prepare) => {
+  it('refuses a row whose unreadable manifest cannot be read', () => {
     const f = fixture()
-    prepare(f)
-    const name = _label === 'a module path that loops'
-      ? './node_modules/denied-plugin/loop.mjs' : './node_modules/denied-plugin/index.mjs'
-    const rows = prepareProfileEntries(context(f), [{ id: 'row', name }], pathToFileURL(f.dir).href + '/')
+    f.plugin('denied-plugin')
+    rmSync(join(f.dir, 'node_modules', 'denied-plugin', 'package.json'))
+    mkdirSync(join(f.dir, 'node_modules', 'denied-plugin', 'package.json'))
+    const rows = prepareProfileEntries(context(f), [{ id: 'row', name: './node_modules/denied-plugin/index.mjs' }], pathToFileURL(f.dir).href + '/')
+    expect(rows[0]?.disabled).toBe(true)
+    expect(f.warnings.join('\n')).toContain('cannot be validated')
+  })
+
+  // The case constructs a symlink loop: hosts without symlink privilege (Windows without Developer Mode) skip it.
+  it.skipIf(!symlinkSupported)('refuses a row whose looping module path cannot be read', () => {
+    const f = fixture()
+    f.plugin('denied-plugin')
+    symlinkSync('loop.mjs', join(f.dir, 'node_modules', 'denied-plugin', 'loop.mjs'))
+    const rows = prepareProfileEntries(context(f), [{ id: 'row', name: './node_modules/denied-plugin/loop.mjs' }], pathToFileURL(f.dir).href + '/')
     expect(rows[0]?.disabled).toBe(true)
     expect(f.warnings.join('\n')).toContain('cannot be validated')
   })
