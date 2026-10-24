@@ -15,6 +15,21 @@ async function expectRejection(promise: Promise<unknown>, fields: object, messag
   await expect(promise).rejects.toThrow(message)
 }
 
+/** Whether this host can create the symlinks the disappearing-entry case constructs. */
+const symlinkSupported = (() => {
+  const probe = mkdtempSync(join(tmpdir(), 'dsh-symlink-capacity-'))
+  try {
+    writeFileSync(join(probe, 'target'), 'x')
+    symlinkSync(join(probe, 'target'), join(probe, 'link'), 'file')
+    return true
+  } catch {
+    // EPERM: no symlink privilege on this host.
+    return false
+  } finally {
+    rmSync(probe, { recursive: true, force: true })
+  }
+})()
+
 
 let root: string
 const lifetime = new AbortController()
@@ -184,9 +199,11 @@ it('refuses a repository that a completed fetch left past its limit', async () =
   const repositories = cache({ maxRepositoryBytes: 4096, sizePollMs: 3_600_000 })
   await expect(repositories.read(source.url, source.commit, 'dir0/f.txt', 100, signal)).rejects.toMatchObject({ reason: 'too-large' })
   expect(readdirSync(join(root, 'cache'))).toEqual([])
-})
+  // The thousand-directory fetch measured near 10s on a Windows host; the case takes the lane-sized bound.
+}, 60_000)
 
-it('deletes least recently used repositories beyond the cache size and stale staging directories', async () => {
+// The disappearing-entry case constructs a symlink: hosts without symlink privilege (Windows without Developer Mode) skip it.
+it.skipIf(!symlinkSupported)('deletes least recently used repositories beyond the cache size and stale staging directories', async () => {
   const first = repository('f', { 'README.md': 'first' })
   const second = repository('g', { 'README.md': 'second' })
   const third = repository('h', { 'README.md': 'third' })
