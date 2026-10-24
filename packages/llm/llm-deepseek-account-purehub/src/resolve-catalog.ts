@@ -9,9 +9,7 @@
  * capabilities a thin listing entry leaves out.
  */
 import { resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
-import type { DeepSeekCatalogModel } from '@deepseek-ai/dsh-llm-deepseek'
-import type { ModelOverride } from '@deepseek-ai/dsh-llm-deepseek-account/src/config.ts'
-import type { ListedFacts, ListingEntry } from '@deepseek-ai/dsh-llm-deepseek-account/src/listing.ts'
+import type { DeepSeekCatalogModel, ListedFacts, ListingEntry, ModelOverride } from '@deepseek-ai/dsh-llm-deepseek'
 
 /** Why this build refuses one listed model before network I/O. */
 export type CatalogRefusal = { readonly kind: 'other-route' }

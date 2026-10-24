@@ -4,12 +4,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import { ACCOUNT_QUOTA_EXCEEDED_CODE, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { catalogModelInfo, registerDeepSeekProvider, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
-import type { DeepSeekRequestAuth, ResolvedDeepSeekOptions } from '@deepseek-ai/dsh-llm-deepseek'
-import { AccountModelCatalog } from '@deepseek-ai/dsh-llm-deepseek-account/src/catalog.ts'
-import type { CatalogView } from '@deepseek-ai/dsh-llm-deepseek-account/src/catalog.ts'
-import { requestModelListing } from '@deepseek-ai/dsh-llm-deepseek-account/src/listing.ts'
-import type { ModelListing } from '@deepseek-ai/dsh-llm-deepseek-account/src/listing.ts'
+import { catalogModelInfo, ModelListingCache, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import type { DeepSeekRequestAuth, ListingView, ModelListing, ResolvedDeepSeekOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions, resolvePurehubOptions } from './config.ts'
 import { resolveAccountCatalog } from './resolve-catalog.ts'
 import type { AccountCatalog, CatalogRefusal } from './resolve-catalog.ts'
@@ -73,9 +69,8 @@ export function apply(ctx: Context, config: Config): void {
       },
     }
   }
-  const catalog = new AccountModelCatalog({
-    settings: () => settings().catalog,
-    token: async url => account()?.resolveToken(url),
+  const catalog = new ModelListingCache({
+    credential: async url => account()?.resolveToken(url),
     load: (url, token, signal) => {
       const headers = settings().authScheme === 'bearer'
         ? { authorization: `Bearer ${token}` }
@@ -88,7 +83,7 @@ export function apply(ctx: Context, config: Config): void {
   })
   let loggedListing: ModelListing | undefined
   /** Resolve the catalog for one view, reporting a declaration the gateway no longer lists once per listing. */
-  const connectionOf = (view: CatalogView): AccountConnection => {
+  const connectionOf = (view: ListingView): AccountConnection => {
     const resolved = settings()
     const result = resolveAccountCatalog({
       listing: view.listing?.entries,
@@ -108,7 +103,7 @@ export function apply(ctx: Context, config: Config): void {
   const directory = ctx.llm.registerConfigurableProviders([entry])
   let reportedError: string | undefined
   /** Publish override diagnostics on the provider directory. */
-  const discovered = (view: CatalogView): AccountConnection => {
+  const discovered = (view: ListingView): AccountConnection => {
     const connection = connectionOf(view)
     const error = connection.catalog.overrideErrors.length === 0 ? undefined : connection.catalog.overrideErrors.join('; ')
     if (error !== reportedError) {
@@ -120,12 +115,12 @@ export function apply(ctx: Context, config: Config): void {
   registerDeepSeekProvider<AccountConnection>(ctx, PROVIDER, {
     providerName: 'PureHub',
     options: () => connectionOf(catalog.current()),
-    connect: async signal => connectionOf(await catalog.view(signal)),
+    connect: async signal => connectionOf(await catalog.view(settings().catalog, signal)),
     resolveAuth,
     admit: (connection, model) => { refuse(model, connection.catalog.refusals.get(model)) },
     discoverModels: async (provider) => {
-      const view = await catalog.view()
-      return view.signedIn ? discovered(view).catalog.offered.map(model => catalogModelInfo(provider, model)) : []
+      const view = await catalog.view(settings().catalog)
+      return view.authenticated ? discovered(view).catalog.offered.map(model => catalogModelInfo(provider, model)) : []
     },
   })
   ctx.effect(() => () => { catalog.dispose() }, 'llm-deepseek-account-purehub: model catalog')

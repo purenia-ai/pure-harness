@@ -1,9 +1,7 @@
 /** Fork catalog resolution: the listing decides availability, the prefix map decides the owning route. */
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_REQUEST_IMAGE_MAX_BYTES, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
-import type { DeepSeekCatalogModel } from '@deepseek-ai/dsh-llm-deepseek'
-import type { ModelOverride } from '@deepseek-ai/dsh-llm-deepseek-account/src/config.ts'
-import { parseModelListing } from '@deepseek-ai/dsh-llm-deepseek-account/src/listing.ts'
+import { DEFAULT_REQUEST_IMAGE_MAX_BYTES, parseModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import type { DeepSeekCatalogModel, ModelOverride } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions } from '../src/config.ts'
 import { resolveAccountCatalog } from '../src/resolve-catalog.ts'
 
@@ -88,7 +86,7 @@ describe('with a listing', () => {
   it('keeps this build\'s fields a declaration leaves unset', () => {
     const catalog = resolve([{ id: 'deepseek-flash' }], [{ id: 'deepseek-flash' }])
     expect(catalog.offered[0]).toMatchObject({
-      id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', contextWindow: 1_000_000,
+      id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', contextWindow: 1_048_576,
       systemPromptUpdate: 'in-history', toolUpdate: 'addition-only',
     })
   })
