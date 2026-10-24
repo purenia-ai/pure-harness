@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/experimental/plugin-market-bundle/README.md
 /:
-  en: d8af9b6bbb50c868
-  zh: 984ac08f172ac4b6
+  en: 62daa554fb436201
+  zh: 8e898dbaa5c557f8
 /deepseek-ai-dsh-experimental-plugin-market-bundle:
   en: c8315ff66be4cfb9
   zh: d721a9496d8b0a8d
 /deepseek-ai-dsh-experimental-plugin-market-bundle/summary:
-  en: e6c64ea2dc4412f4
-  zh: f124f8e6156b53b9
+  en: 1a02dcd3e7b8c4ca
+  zh: 6c2fb24491b948c4
 /deepseek-ai-dsh-experimental-plugin-market-bundle/table-of-contents:
   en: 76368b6b1da79c80
   zh: 434cf3c1f5db33cd
@@ -27,8 +27,8 @@
   en: dc60f12c8d3b0e79
   zh: 6eb3928424a7f783
 /deepseek-ai-dsh-experimental-plugin-market-bundle/known-limitations-and-deferred-work:
-  en: 2428c5d0154313d4
-  zh: 01bad161c1c44f4b
+  en: f31b50705714e23d
+  zh: 035fa56146302410
 /deepseek-ai-dsh-experimental-plugin-market-bundle/known-limitations-and-deferred-work/dev-note:
   en: 0225ba087c5266f3
   zh: 4e706f1b2b984e63

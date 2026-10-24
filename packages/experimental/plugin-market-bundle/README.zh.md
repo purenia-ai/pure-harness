@@ -1,5 +1,5 @@
 ---
-description: "从插件管理页启用实验性的自定义插件市场。"
+description: "从插件管理页启用实验性的自定义插件索引。"
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-此可选组合包（bundle）挂载自定义插件市场：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件市场索引，Web 端提供插件页的[发现标签页](../../client/ui-plugin-market/README.zh.md)。本 fork 的 base 组合直接挂载这些行并预置 hub 市场索引，因此该组合包已从 profile 选择中退役：profile 不会重复挂载这些行。
+此可选组合包（bundle）挂载自定义插件索引：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件索引，Web 端提供插件页的[发现标签页](../../client/ui-plugin-market/README.zh.md)。本 fork 的 base 组合直接挂载这些行并预置 hub 市场索引，因此该组合包已从 profile 选择中退役：profile 不会重复挂载这些行。
 
 ## 目录
 
@@ -53,7 +53,7 @@ kind: "package-bundle"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- 组合包本身不提供市场内容；发现标签页列出已配置的索引源，本 fork 在 base 组合中预置了 hub 索引。
+- 组合包本身不提供索引内容；发现标签页列出已配置的索引源，本 fork 在 base 组合中预置了 hub 索引。
 
 -----
 

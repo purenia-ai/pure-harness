@@ -1,5 +1,5 @@
 ---
-description: "Enable experimental custom plugin markets from the plugin manager."
+description: "Enable experimental custom plugin indexes from the plugin manager."
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This optional bundle mounts custom plugin markets: the Host [`pluginMarket`](../../boot/plugin-market/README.md) service, which reads the plugin market indexes the user adds, and the Web [Discover tab](../../client/ui-plugin-market/README.md) of the Plugins page. This fork's base composition mounts those rows directly with the hub market index preconfigured, so the bundle is retired from profile selection: a profile never mounts the rows twice.
+This optional bundle mounts custom plugin indexes: the Host [`pluginMarket`](../../boot/plugin-market/README.md) service, which reads the plugin indexes the user adds, and the Web [Discover tab](../../client/ui-plugin-market/README.md) of the Plugins page. This fork's base composition mounts those rows directly with the hub market index preconfigured, so the bundle is retired from profile selection: a profile never mounts the rows twice.
 
 ## Table of Contents
 
@@ -53,7 +53,7 @@ Switching the bundle on or off adds or removes one tool schema in Creator sessio
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- The bundle contributes no market content itself; Discover lists the configured index sources, and this fork preconfigures the hub index in its base composition.
+- The bundle contributes no index content itself; Discover lists the configured index sources, and this fork preconfigures the hub index in its base composition.
 
 -----
 
