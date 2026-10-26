@@ -48,6 +48,8 @@ tag：`purehub-v0.2.1-alpha.3.1`（指向构建提交 `61b1b0f022`）。
 | `packages/experimental/skill-badge/**` | badge 文案 → `powered by PureHub`；**图片必须是我们那版**（设计师包会盖回 dsp 版） |
 | `README.md` / `README.zh.md` / `README.i18n.yaml` | 标题 + fork 非隶属声明；改完必须重录 i18n hash |
 | `LICENSE` | PURESNAKE 修改声明与上游 MIT 版权并存 |
+| `packages/bundle/base/cordis.patch.yml` | `llm-pi-ai` 行保持挂载且不 `disabled` —— 它是「自定义模型 API」表单写入的 settings namespace，缺了设置 → 模型的手动添加入口就消失；fork 的 hub 模型（`llm-pi-ai-account`、`llm-deepseek-account-purehub`）只能追加，不能替换掉手动入口 |
+| `packages/bundle/web-app/cordis.patch.yml` | `ui-settings-models` 行保持挂载 —— 设置 → 模型页本身；缺了整页不可用 |
 
 ### 🟡 冲突时保留我方
 
