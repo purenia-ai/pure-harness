@@ -36,6 +36,26 @@ export function normalizeRegistry(url: string): string {
   return parsed.href
 }
 
+/** The scope of one registry package name, which a scope-routed registry flag is keyed by. */
+function packageScope(name: string): string | null {
+  const match = /^(@[a-z0-9][a-z0-9._~-]*)\//.exec(name)
+  return match === null ? null : (match[1] as string)
+}
+
+/**
+ * The scope a registry serves for one package name, when that registry is one configured to serve only
+ * the scopes of the packages published to it. Sending such a registry the whole dependency graph would
+ * ask it for packages it does not carry, so it is pointed at one scope instead.
+ * @param registry - the registry asked; null is the one pnpm's own configuration names, which the caller's own settings route.
+ * @param scopedRegistries - configured registries serving only their packages' scopes, in pnpm's comparison form.
+ * @param name - the package name installed from the registry.
+ * @returns the scope to route, or null to point the registry at every package.
+ */
+export function registryScope(registry: Registry, scopedRegistries: ReadonlySet<string>, name: string): string | null {
+  if (registry === null || !scopedRegistries.has(normalizeRegistry(registry))) return null
+  return packageScope(name)
+}
+
 /**
  * The registries one operation asks, first to last.
  *

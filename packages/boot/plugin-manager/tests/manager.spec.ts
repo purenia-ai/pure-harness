@@ -1026,6 +1026,27 @@ it('removes a package with the registry it was installed from, so pnpm verifies 
   expect(pnpm.mock.calls.at(-1)?.[1]).toEqual(['remove', 'mirrored'])
 })
 
+it('removes a package through the same scope route it was installed with', async () => {
+  const { manager, dir, bundle } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB], scopedRegistries: [SCOPED_HUB] })
+  const pnpm = vi.spyOn(operations, 'runProfilePnpm').mockImplementation(async (_context, args) => {
+    const name = String(args[1])
+    const manifest = readProfileManifest('test', dir)
+    if (args[0] === 'add') {
+      bundle(name, [{ id: name, name: './plugin.mjs', config: { service: name } }])
+      manifest.dependencies = { ...manifest.dependencies, [name]: '1.0.0' }
+    } else {
+      delete manifest.dependencies?.[name]
+    }
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+    return { exitCode: 0, output: '', truncated: false, logPath: join(dir, 'pnpm.log') }
+  })
+  onTestFinished(() => { pnpm.mockRestore() })
+  expect(await manager.installBundle('@test/scoped', { enabled: false, registry: SCOPED_HUB })).toMatchObject({ application: 'applied' })
+  expect(await manager.removeBundle('@test/scoped')).toMatchObject({ application: 'applied' })
+  // `pnpm remove` takes no `--registry`, so the same route is set through the generic configuration flag.
+  expect(pnpm.mock.calls.at(-1)?.[1]).toEqual(['remove', '@test/scoped', `--config.@test:registry=${SCOPED_HUB}`])
+})
+
 it('streams pnpm output, reports the installation phases, and names the installed bundle', async () => {
   const { ctx, manager, dir, bundle } = await fixture()
   const chunks: PluginInstallLogChunk[] = []
@@ -1836,6 +1857,60 @@ it('adds no credentials for origins outside authenticatedOrigins', async () => {
   onTestFinished(() => { pnpm.mockRestore() })
   await manager.installBundle('https://files.example.com/bundles/test-bundle-1.0.0.tgz')
   expect(pnpm.mock.calls[0]![2].env ?? {}).not.toHaveProperty(AUTH_ENV_KEY)
+})
+
+// A market whose registry serves only the scopes it publishes, rather than proxying npm: routing the
+// whole dependency graph there would ask it for packages it does not carry.
+const SCOPED_HUB = 'https://hub.puresnake.com/npm/'
+
+it('routes a scoped registry to the package scope alone, leaving every other package on pnpm own registry', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, {
+    authenticatedOrigins: [AUTH_HUB], scopedRegistries: [SCOPED_HUB],
+  }, undefined, undefined, false, 'tok-1')
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  await manager.installBundle('@purehub/pure-im', { registry: SCOPED_HUB })
+  const args = pnpm.mock.calls[0]![1]
+  // The package's scope names the registry; no flag sends the unscoped remainder of the graph there.
+  expect(args).toContain(`--@purehub:registry=${SCOPED_HUB}`)
+  expect(args.some(argument => argument.startsWith('--registry='))).toBe(false)
+  // The account grant still reaches the run, which is what makes the private registry answer.
+  expect(pnpm.mock.calls[0]![2].env).toMatchObject({ [AUTH_ENV_KEY]: 'tok-1' })
+})
+
+it('routes a scoped registry for every package while it is not configured as scope-serving', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, 'tok-1')
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  await manager.installBundle('@purehub/pure-im', { registry: SCOPED_HUB })
+  const args = pnpm.mock.calls[0]![1]
+  expect(args).toContain(`--registry=${SCOPED_HUB}`)
+  expect(args.some(argument => argument.includes(':registry='))).toBe(false)
+})
+
+it('routes a scoped registry for an unscoped package through the whole-graph flag it cannot avoid', async () => {
+  const { manager, dir } = await fixture('live', false, undefined, { scopedRegistries: [SCOPED_HUB] })
+  const pnpm = probeRun(dir)
+  onTestFinished(() => { pnpm.mockRestore() })
+  await manager.installBundle('test-bundle', { registry: SCOPED_HUB })
+  // A name without a scope gives pnpm nothing to key the route by, so the caller's registry stands for the graph.
+  expect(pnpm.mock.calls[0]![1]).toContain(`--registry=${SCOPED_HUB}`)
+})
+
+it('asks a scope-routed registry through the same route during the pre-install lookup', async () => {
+  const { manager } = await fixture('live', false, undefined, { scopedRegistries: [SCOPED_HUB] })
+  const view = vi.spyOn(operations, 'viewProfilePackage').mockResolvedValue({ exitCode: 1, stdout: '', stderr: '', timedOut: false })
+  onTestFinished(() => { view.mockRestore() })
+  await manager.inspect('@purehub/pure-im', { registry: SCOPED_HUB })
+  expect(view.mock.calls[0]![2]).toMatchObject({ registry: SCOPED_HUB, scope: '@purehub' })
+})
+
+it('leaves the lookup unscoped for a registry that is not configured as scope-serving', async () => {
+  const { manager } = await fixture('live', false, undefined, {})
+  const view = vi.spyOn(operations, 'viewProfilePackage').mockResolvedValue({ exitCode: 1, stdout: '', stderr: '', timedOut: false })
+  onTestFinished(() => { view.mockRestore() })
+  await manager.inspect('@purehub/pure-im', { registry: SCOPED_HUB })
+  expect(view.mock.calls[0]![2]).not.toHaveProperty('scope')
 })
 
 it('authenticates the registry lookup during inspection and sends nothing while signed out', async () => {

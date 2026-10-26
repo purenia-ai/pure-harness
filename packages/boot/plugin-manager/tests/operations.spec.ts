@@ -271,6 +271,16 @@ it('reads the last match when the registry lookup answers with several versions'
   expect(command.run).toHaveBeenCalledTimes(1)
 })
 
+it('carries a scope-routed registry flag into the pre-install lookup, so both ask the same registry', async () => {
+  const { context, pnpm } = fixture()
+  pnpm.view = () => ({ exitCode: 0, stdout: JSON.stringify({ name: '@purehub/pure-im', version: '0.3.0' }) })
+  await runProfilePnpm(context, ['add', '@purehub/pure-im@0.3.0', '--@purehub:registry=https://hub.example/npm/'], {
+    execution: 'service', outputBytes: 8192, lookupTimeoutMs: 5_000,
+  })
+  expect(pnpm.views).toEqual(['@purehub/pure-im@0.3.0'])
+  expect(command.run.mock.calls[0]?.[1] as readonly string[]).toContain('--@purehub:registry=https://hub.example/npm/')
+})
+
 it('runs an invocation that names no command without a registry lookup', async () => {
   const { context, pnpm } = fixture()
   expect(await runProfilePnpm(context, ['--version'], { execution: 'service', outputBytes: 8192 }))
@@ -950,6 +960,10 @@ it('asks the registry through pnpm view in the profile directory, without pnpm\'
   answer({ exitCode: 0, stdout: '{"name":"x"}', stderr: '', timedOut: false, isCanceled: false })
   await viewProfilePackage(dir, 'x', { fields: VIEW_FIELDS, timeoutMs: 5, registry: null })
   expect((command.run.mock.lastCall as unknown[])[1]).toEqual(['view', 'x', 'name', 'version', 'description', 'dsh', '--json', '--config.fetch-retries=0'])
+  // A registry serving one scope is pointed at that scope alone.
+  answer({ exitCode: 0, stdout: '{"name":"x"}', stderr: '', timedOut: false, isCanceled: false })
+  await viewProfilePackage(dir, 'x', { fields: VIEW_FIELDS, timeoutMs: 5, registry: 'https://hub.example/npm/', scope: '@purehub' })
+  expect((command.run.mock.lastCall as unknown[])[1]).toEqual(['view', 'x', 'name', 'version', 'description', 'dsh', '--json', '--@purehub:registry=https://hub.example/npm/', '--config.fetch-retries=0'])
   const signal = AbortSignal.abort()
   answer({ exitCode: undefined, stdout: '', stderr: '', timedOut: true, isCanceled: false })
   expect(await viewProfilePackage(dir, 'x', { fields: VIEW_FIELDS, timeoutMs: 5, signal })).toEqual({ exitCode: null, stdout: '', stderr: '', timedOut: true })

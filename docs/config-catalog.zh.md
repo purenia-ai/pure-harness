@@ -2663,6 +2663,13 @@ export interface Config {
    */
   fallbackRegistries?: string[]
   /**
+   * Registries that serve only the scopes of the packages published to them, as http(s) URLs, rather than
+   * proxying npm. Pointing one of them at the whole dependency graph would ask it for packages it does not
+   * carry, so an install from it routes that package's scope alone and every other package keeps the
+   * registry pnpm's own configuration names. A registry outside this list is asked for every package.
+   */
+  scopedRegistries?: string[]
+  /**
    * Origins whose registry lookups and package downloads authenticate with `deepseekAccount.resolveToken`: each pnpm
    * run receives the fresh token as a host-scoped npm-config environment entry, and an install needing a grant none
    * exists for fails with `sign-in-required` before pnpm starts. Origins outside this list never receive a token.

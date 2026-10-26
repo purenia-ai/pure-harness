@@ -2,10 +2,35 @@
 
 import { describe, expect, it } from 'vitest'
 import { parseInstallSpec } from '../src/install-spec.ts'
-import { attributeFailure, normalizeRegistry, OFFICIAL_NPM_REGISTRY, registryPlan, REGISTRY_URL } from '../src/registry.ts'
+import { attributeFailure, normalizeRegistry, OFFICIAL_NPM_REGISTRY, registryPlan, registryScope, REGISTRY_URL } from '../src/registry.ts'
 
 const MIRROR = 'https://registry.npmmirror.com/'
 const CORP = 'https://npm.corp.example/'
+
+describe('registryScope', () => {
+  const scoped = new Set([normalizeRegistry(CORP)])
+
+  it('routes a scope-serving registry to the scope of the package installed from it', () => {
+    expect(registryScope(CORP, scoped, '@purehub/pure-im')).toBe('@purehub')
+    // The configured URL and the requested one are compared in pnpm's own normalized form, which adds
+    // the trailing slash a market index may omit.
+    expect(registryScope('https://NPM.corp.example', scoped, '@purehub/pure-im')).toBe('@purehub')
+    expect(registryScope('https://npm.corp.example', scoped, '@purehub/pure-im')).toBe('@purehub')
+  })
+
+  it('points a registry at every package when it is not configured as scope-serving', () => {
+    expect(registryScope(CORP, new Set(), '@purehub/pure-im')).toBeNull()
+    expect(registryScope(MIRROR, scoped, '@purehub/pure-im')).toBeNull()
+  })
+
+  it('points the choice pnpm\u0027s own configuration makes at every package', () => {
+    expect(registryScope(null, scoped, '@purehub/pure-im')).toBeNull()
+  })
+
+  it('points a scope-serving registry at every package when the name has no scope to route', () => {
+    expect(registryScope(CORP, scoped, 'dsh-x')).toBeNull()
+  })
+})
 
 describe('normalizeRegistry', () => {
   it('parses an http(s) URL into pnpm\'s comparison form: lower-case host, trailing slash', () => {

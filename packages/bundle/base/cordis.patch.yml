@@ -24,6 +24,11 @@
         # Installs from the hub registry or tarballs authenticate with the account token.
         authenticatedOrigins:
           - 'https://hub.puresnake.com'
+        # The hub publishes and serves only its own packages, so an install from it is routed
+        # to that package's scope: every other package keeps the registry pnpm's own
+        # configuration names, and the hub is never asked to carry npm.
+        scopedRegistries:
+          - 'https://hub.puresnake.com/npm'
 
     # The fork's own plugin market, built in: the Discover tab reads the hub
     # index, and hub-origin reads carry the account token.

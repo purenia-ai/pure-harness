@@ -336,7 +336,7 @@ export async function runProfilePnpm(
   const preflight: string[] = []
   const exemptions = readProfileVersionExemptions(dir)
   // The run's own registry flags, so the lookup asks the registry the installation will use.
-  const registryFlags = args.filter(argument => argument.startsWith('--registry='))
+  const registryFlags = args.filter(argument => REGISTRY_FLAG.test(argument))
   for (const raw of namedSpecs(args)) {
     // A spec whose manifest cannot be read or validated is left to the run itself and to the check
     // after installation, which reports what it could not validate.
@@ -584,6 +584,8 @@ export interface PackageViewOptions {
   timeoutMs: number
   /** The registry asked; null asks the one pnpm's own configuration names. */
   registry?: Registry
+  /** The scope that registry serves alone, when it serves one; null points it at every package. */
+  scope?: string | null
   /** The manifest fields printed, as `pnpm view` names them; registry-only fields such as `versions`, `time`, and `dist-tags` included. */
   fields: readonly string[]
 }
@@ -607,13 +609,22 @@ export async function readProfileRegistry(
 }
 
 /**
- * The argument that sends one pnpm command to a registry.
+ * The arguments that send one pnpm command to a registry.
+ *
+ * A `scope` names the one package scope the registry serves, so pnpm is pointed at that scope alone and
+ * every other package keeps the registry pnpm's own configuration names. Without one the registry stands
+ * for the whole dependency graph, which is what a mirror or a proxying corporate registry is.
  * @param registry - the registry, or null for the one pnpm's own configuration names.
- * @returns `--registry=<url>` for a URL; nothing for null.
+ * @param scope - the scope the registry serves alone, such as `@purehub`; null to point it at every package.
+ * @returns the registry flags, in the form `--registry=<url>` or `--<scope>:registry=<url>`; nothing for a null registry.
  */
-export function registryArguments(registry: Registry): string[] {
-  return registry === null ? [] : [`--registry=${registry}`]
+export function registryArguments(registry: Registry, scope: string | null = null): string[] {
+  if (registry === null) return []
+  return scope === null ? [`--registry=${registry}`] : [`--${scope}:registry=${registry}`]
 }
+
+/** Registry flags of a pnpm argument list, in either form `registryArguments` emits. */
+const REGISTRY_FLAG = /^--(?:@[a-z0-9][a-z0-9._~-]*:)?registry=/u
 
 /**
  * Ask the registry what a spec names through `pnpm view`, run in the profile
@@ -629,7 +640,7 @@ export function registryArguments(registry: Registry): string[] {
 export async function viewProfilePackage(dir: string, spec: string, options: PackageViewOptions): Promise<PackageViewResult> {
   const result = await execa(options.command ?? 'pnpm', [
     ...options.args ?? [], 'view', spec, ...options.fields, '--json',
-    ...registryArguments(options.registry ?? null), '--config.fetch-retries=0',
+    ...registryArguments(options.registry ?? null, options.scope ?? null), '--config.fetch-retries=0',
   ], {
     cwd: dir, env: { ...scrubbedParentEnv(), ...options.env }, extendEnv: false, reject: false, stdin: 'ignore',
     timeout: options.timeoutMs, ...options.signal === undefined ? {} : { cancelSignal: options.signal },

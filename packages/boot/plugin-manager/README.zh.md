@@ -90,6 +90,7 @@ CLI 提供 `dsh plugin --profile <profile> version-exemptions`、`allow-version 
 | `gitTransportTimeoutMs` | `5000` | 安装前对自托管 Git 仓库每次 HTTP(S) 与 SSH 访问探测的时限，单位毫秒。 |
 | `registry` | pnpm 自身配置 | 查询与安装首先询问的注册表，http(s) URL；缺省为 pnpm 自身配置指定的那个。 |
 | `fallbackRegistries` | `['https://registry.npmmirror.com/']` | 前一个注册表不可达或没有该包副本时依次询问的注册表，http(s) URL；pnpm 自身的注册表只在它指向 npm 官方源或这里的某一个时才进入顺序。 |
+| `scopedRegistries` | `[]` | 只服务其已发布包所在 scope、而不代理 npm 的注册表，http(s) URL。从这类注册表安装时，只把该包的 scope 路由过去（`--@scope:registry=<url>`），因此其余包仍走 pnpm 自身配置指定的注册表，该注册表也不会被要求承载 npm；不带 scope 的包名，或不在本列表中的注册表，则对整个依赖图生效（`--registry=<url>`）。 |
 | `authenticatedOrigins` | `[]` | 其注册表查询与包下载需要账号服务鉴权的 origin：每次 pnpm 运行通过 `deepseekAccount.resolveToken` 现取的新鲜 token 以按 host 划分的 npm-config 环境变量注入；安装需要授权而不存在可用授权时，在 pnpm 启动前以 `sign-in-required` 失败。不在此列表中的 origin 永远不会收到 token，且 token 从不写入 profile。 |
 | `outputBytes` | `16384` | 每次操作返回的 pnpm 诊断字节上限；完整输出保留在返回的日志路径中。 |
 | `lockWaitMs` | `120000` | 获取 profile 写锁的最长等待毫秒数。 |

@@ -32,7 +32,7 @@ import { bundleManifest, readProfileRegistry, registryArguments, runProfilePnpm,
 import { classifyInstallFailure } from './install-failure.ts'
 import { officialBundleInstallTarget } from './official-install-target.ts'
 import { dependencySpec, InvalidInstallSpecError, parseInstallSpec, type ParsedInstallSpec } from './install-spec.ts'
-import { attributeFailure, normalizeRegistry, NPMMIRROR_REGISTRY, registryPlan } from './registry.ts'
+import { attributeFailure, normalizeRegistry, NPMMIRROR_REGISTRY, registryPlan, registryScope } from './registry.ts'
 import { flatten, writePluginEnabled } from './patch.ts'
 import { incompatiblePlugin, ManagementFailure } from './failure.ts'
 import { approveBuilds, recordPendingBuilds } from './build-approval.ts'
@@ -73,6 +73,13 @@ export interface Config {
    * unless that is npm's own registry or one of these.
    */
   fallbackRegistries?: string[]
+  /**
+   * Registries that serve only the scopes of the packages published to them, as http(s) URLs, rather than
+   * proxying npm. Pointing one of them at the whole dependency graph would ask it for packages it does not
+   * carry, so an install from it routes that package's scope alone and every other package keeps the
+   * registry pnpm's own configuration names. A registry outside this list is asked for every package.
+   */
+  scopedRegistries?: string[]
   /**
    * Origins whose registry lookups and package downloads authenticate with `deepseekAccount.resolveToken`: each pnpm
    * run receives the fresh token as a host-scoped npm-config environment entry, and an install needing a grant none
@@ -323,6 +330,7 @@ export class PluginManager extends TypertRemoteService {
     idleTimeoutMs: z.number().step(1).min(1000).default(600000),
     registry: z.string().pattern(REGISTRY_URL),
     fallbackRegistries: z.array(z.string().pattern(REGISTRY_URL)).default([NPMMIRROR_REGISTRY]),
+    scopedRegistries: z.array(z.string().pattern(REGISTRY_URL)).default([]),
     authenticatedOrigins: z.array(z.string().pattern(REGISTRY_URL)).default([]),
     versionListLimit: z.number().step(1).min(1).default(20),
     versionLookupConcurrency: z.number().step(1).min(1).default(4),
@@ -354,6 +362,8 @@ export class PluginManager extends TypertRemoteService {
   private readonly ownerContext: Context
   /** Normalized origins whose pnpm runs authenticate with the account token. */
   private readonly authenticatedOrigins: ReadonlySet<string>
+  /** Normalized registries that serve only their packages' scopes rather than proxying npm. */
+  private readonly scopedRegistries: ReadonlySet<string>
   private readonly abort = new AbortController()
   /** Installations by request id, from their call until it settles. */
   private readonly installs = new Map<PluginInstallRequestId, InstallControl>()
@@ -384,6 +394,7 @@ export class PluginManager extends TypertRemoteService {
       npmFileSources: required.detailNpmFileSources, timeoutMs: required.detailFetchTimeoutMs, lifetime: this.abort.signal,
     }
     this.authenticatedOrigins = new Set(required.authenticatedOrigins.map(originOf))
+    this.scopedRegistries = new Set(required.scopedRegistries.map(normalizeRegistry))
     ctx.effect(() => async () => {
       this.abort.abort()
       await Promise.allSettled([...this.packageOperations])
@@ -796,9 +807,13 @@ export class PluginManager extends TypertRemoteService {
       // An account-owned registry carries the fresh grant into the lookup; without one the lookup answers as-is.
       const registryUrl = registry ?? own
       const env = await this.installAuthEnvironment(registryUrl === null ? [] : [registryUrl])
+      // The lookup asks the same registry the installation would, routed the same way: a scoped registry
+      // serves only its packages' scope.
+      const scope = parsed.kind === 'registry' ? registryScope(registry, this.scopedRegistries, parsed.name) : null
       const view = await viewProfilePackage(this.profile.dir, spec, {
         ...this.profile.packageManager ?? { command: this.pnpmCommand },
         fields, timeoutMs: this.inspectTimeoutMs, ...signal === undefined ? {} : { signal }, registry,
+        ...scope === null ? {} : { scope },
         ...env === undefined || env === 'no-grant' ? {} : { env },
       })
       const printed = view.stdout.replace(ANSI_SEQUENCE, '').trim()
@@ -936,7 +951,10 @@ export class PluginManager extends TypertRemoteService {
           const registryUrl = registry ?? registriesInfo.resolved
           const auth = await this.installAuthEnvironment([...registryUrl === null ? [] : [registryUrl], ...specTargets])
           if (auth === 'no-grant') throw new ManagementFailure('sign-in-required')
-          run = await this.runPnpm(['add', installSpec, ...options?.saveExact === true ? ['--save-exact'] : [], ...registryArguments(registry)], control.abort.signal, requestId, auth)
+          // A registry serving one scope is pointed at that scope alone; without a name to route by, it stands for every package.
+          const scopedName = parsed.kind === 'registry' ? parsed.name : null
+          const scope = scopedName === null ? null : registryScope(registry, this.scopedRegistries, scopedName)
+          run = await this.runPnpm(['add', installSpec, ...options?.saveExact === true ? ['--save-exact'] : [], ...registryArguments(registry, scope)], control.abort.signal, requestId, auth)
           result.packageResult = run
           if (stopped()) throw new InstallCancelledError()
           // A compatibility refusal is the package's own answer, so no other registry is asked.
@@ -1064,9 +1082,13 @@ export class PluginManager extends TypertRemoteService {
       })
       if (!installed) return
       // `pnpm remove` takes no `--registry` option; the generic configuration flag sets the same setting. A package
-      // installed before this process started is removed with the registry an installation asks first.
+      // installed before this process started is removed with the registry an installation asks first, routed the
+      // same way it was installed: a scoped registry is named for that package's scope alone.
       const registry = this.installedFrom.has(name) ? this.installedFrom.get(name) : this.configuredRegistries.registry
-      result.packageResult = await this.runPnpm(['remove', name, ...typeof registry === 'string' ? [`--config.registry=${registry}`] : []])
+      const removeScope = typeof registry === 'string' ? registryScope(registry, this.scopedRegistries, name) : null
+      const removeFlags = typeof registry !== 'string' ? []
+        : removeScope === null ? [`--config.registry=${registry}`] : [`--config.${removeScope}:registry=${registry}`]
+      result.packageResult = await this.runPnpm(['remove', name, ...removeFlags])
       if (result.packageResult.exitCode !== 0 || result.packageResult.timedOut === true) {
         throw new Error(result.packageResult.output)
       }
