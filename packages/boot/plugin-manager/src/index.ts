@@ -1088,7 +1088,12 @@ export class PluginManager extends TypertRemoteService {
       const removeScope = typeof registry === 'string' ? registryScope(registry, this.scopedRegistries, name) : null
       const removeFlags = typeof registry !== 'string' ? []
         : removeScope === null ? [`--config.registry=${registry}`] : [`--config.${removeScope}:registry=${registry}`]
-      result.packageResult = await this.runPnpm(['remove', name, ...removeFlags])
+      // pnpm 11 verifies every lockfile entry against its registry before a removal, so an account-owned
+      // registry authenticates here exactly as an installation does; otherwise its unauthenticated answer
+      // (a sign-in page) breaks the metadata parse and the removal aborts.
+      const auth = await this.installAuthEnvironment(typeof registry === 'string' ? [registry] : [])
+      if (auth === 'no-grant') throw new ManagementFailure('sign-in-required')
+      result.packageResult = await this.runPnpm(['remove', name, ...removeFlags], undefined, undefined, auth)
       if (result.packageResult.exitCode !== 0 || result.packageResult.timedOut === true) {
         throw new Error(result.packageResult.output)
       }

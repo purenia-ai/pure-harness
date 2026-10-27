@@ -1928,6 +1928,45 @@ it('authenticates the registry lookup during inspection and sends nothing while 
   expect(view.mock.calls[0]![2].env ?? {}).not.toHaveProperty(AUTH_ENV_KEY)
 })
 
+it('authenticates pnpm runs against a configured origin for removals', async () => {
+  const { manager, dir, bundle, profile } = await fixture('live', false, undefined, { authenticatedOrigins: [AUTH_HUB] }, undefined, undefined, false, 'tok-1')
+  const name = OFFICIAL_ON_DEMAND_CATALOG[0]!.packageName
+  const install = vi.spyOn(operations, 'runProfilePnpm').mockImplementation(async (_dir, args) => {
+    const manifest = readProfileManifest('test', dir)
+    if (args[0] === 'add') {
+      bundle(name, [], profile.home)
+      manifest.dependencies = { ...manifest.dependencies, [name]: '1.0.0' }
+    } else {
+      delete manifest.dependencies?.[name]
+      rmSync(join(profile.home, 'node_modules', name), { recursive: true, force: true })
+    }
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+    return { exitCode: 0, output: '', truncated: false, logPath: join(dir, 'pnpm.log') }
+  })
+  onTestFinished(() => { install.mockRestore() })
+  await manager.installBundle(`${name}@1.0.0`, { registry: `${AUTH_HUB}/npm/` })
+  const removal = vi.spyOn(operations, 'runProfilePnpm').mockResolvedValue({ exitCode: 0, output: '', truncated: false, logPath: join(dir, 'pnpm.log') })
+  onTestFinished(() => { removal.mockRestore() })
+  expect(await manager.removeBundle(name)).toMatchObject({ application: 'applied' })
+  expect(removal.mock.calls[0]![2].env).toMatchObject({ [AUTH_ENV_KEY]: 'tok-1' })
+})
+
+it('refuses an authenticated removal without a grant before pnpm starts', async () => {
+  const { manager, dir, bundle, profile } = await fixture('live', false, undefined, {
+    registry: `${AUTH_HUB}/npm/`, authenticatedOrigins: [AUTH_HUB],
+  }, undefined, undefined, false, null)
+  const name = OFFICIAL_ON_DEMAND_CATALOG[0]!.packageName
+  bundle(name, [], profile.home)
+  const manifest = readProfileManifest('test', dir)
+  manifest.dependencies = { ...manifest.dependencies, [name]: '1.0.0' }
+  writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+  const pnpm = vi.spyOn(operations, 'runProfilePnpm')
+  onTestFinished(() => { pnpm.mockRestore() })
+  const result = await manager.removeBundle(name)
+  expect(result).toMatchObject({ application: 'failed', error: { code: 'sign-in-required' } })
+  expect(pnpm).not.toHaveBeenCalled()
+})
+
 /** A `pnpm view` stand-in answering by spec and printed fields. */
 function viewAnswers(
   answer: (spec: string, fields: readonly string[], registry: string | null | undefined) => operations.PackageViewResult | object | string,
