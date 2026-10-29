@@ -66,7 +66,8 @@ const route = (over: Record<string, unknown> = {}) => ({
 })
 
 it('lists every gateway model another route does not own, through Messages', async () => {
-  const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+  // The shared listing cache reports a loaded listing on the error stream, which ACP leaves free.
+  const info = vi.spyOn(console, 'error').mockImplementation(() => {})
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   const server = await gateway(json({ object: 'list', data: LISTING }))
   const ctx = await host(server.origin)

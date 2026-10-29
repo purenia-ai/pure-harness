@@ -5,7 +5,7 @@ import { ACCOUNT_QUOTA_EXCEEDED_CODE, APP_IDENTITY, LlmError, QUOTA_EXCEEDED_COD
 import type {} from '@deepseek-ai/dsh-deepseek-account'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import {
-  catalogModelInfo, ModelListingCache, refuseListedModel, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions,
+  catalogModelInfo, createModelListingCache, refuseListedModel, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions,
   resolveListedCatalog,
 } from '@deepseek-ai/dsh-llm-deepseek'
 import type { DeepSeekRequestAuth, ListedCatalog, ListingView, ModelListing, ResolvedDeepSeekOptions } from '@deepseek-ai/dsh-llm-deepseek'
@@ -24,7 +24,6 @@ const LOG_TAG = '[llm-deepseek-account]'
 /** Connection facts of one account operation: protocol settings plus the catalog resolved with them. */
 interface AccountConnection extends ResolvedDeepSeekOptions {
   readonly catalog: ListedCatalog
-  readonly authScheme: 'x-dsh-auth-token' | 'bearer'
 }
 
 export function apply(ctx: Context, config: Config): void {
@@ -33,13 +32,11 @@ export function apply(ctx: Context, config: Config): void {
   settings()
   const supported = resolveAdapterOptions({}).models
   const account = () => ctx.get('deepseekAccount')
-  const resolveAuth = async (connection: AccountConnection): Promise<DeepSeekRequestAuth> => {
+  const resolveAuth = async (connection: ResolvedDeepSeekOptions): Promise<DeepSeekRequestAuth> => {
     const token = await account()?.resolveToken(connection.baseURL)
     if (token === undefined) throw new LlmError('Sign in to DeepSeek to use the account provider. The request destination must allow account authentication.', 'ACCOUNT_SIGN_IN_REQUIRED')
     return {
-      headers: connection.authScheme === 'bearer'
-        ? { authorization: `Bearer ${token}` }
-        : { [TOKEN_HEADER]: token },
+      headers: { [TOKEN_HEADER]: token },
       onRequestError: async (error) => {
         if (!(error instanceof LlmError)) return error
         if (error.code === QUOTA_EXCEEDED_CODE) {
@@ -53,21 +50,13 @@ export function apply(ctx: Context, config: Config): void {
       },
     }
   }
-  const catalog = new ModelListingCache({
+  const catalog = createModelListingCache(ctx, name, PROVIDER, {
+    settings: () => settings().catalog,
     credential: async url => account()?.resolveToken(url),
-    load: (url, token, signal) => {
-      const headers = settings().authScheme === 'bearer'
-        ? { authorization: `Bearer ${token}` }
-        : { [TOKEN_HEADER]: token }
-      return requestModelListing(url, headers, signal)
-    },
-    now: () => Date.now(),
-    // ACP reserves stdout for protocol messages, including during successful catalog loads.
-    info: (message) => { console.error(LOG_TAG, message) },
-    warn: (message) => { console.warn(LOG_TAG, message) },
+    load: (url, token, signal) => requestModelListing(url, { [TOKEN_HEADER]: token }, signal),
   })
   let loggedListing: ModelListing | undefined
-  /** Resolve the catalog for one view, logging the listing's hidden entries once per listing. */
+  /** Resolve the catalog, reporting each listing's hidden entries and dropped badges once. */
   const connectionOf = (view: ListingView): AccountConnection => {
     const resolved = settings()
     const result = resolveListedCatalog({
@@ -81,7 +70,7 @@ export function apply(ctx: Context, config: Config): void {
       loggedListing = view.listing
       for (const problem of result.problems) console.warn(LOG_TAG, problem)
     }
-    return { ...resolved.protocol, models: result.resolution, catalog: result, authScheme: resolved.authScheme }
+    return { ...resolved.protocol, models: result.resolution, catalog: result }
   }
   const entry = { provider: PROVIDER, displayName: 'DeepSeek Account', settingsNs: ctx.fiber.entry?.options.id ?? name, settingsPath: [] }
   const directory = ctx.llm.registerConfigurableProviders([entry])
@@ -104,8 +93,9 @@ export function apply(ctx: Context, config: Config): void {
     admit: (connection, model) => { refuseListedModel(model, connection.catalog.refusals.get(model)) },
     discoverModels: async (provider) => {
       const view = await catalog.view(settings().catalog)
-      return view.authenticated ? discovered(view).catalog.offered.map(model => catalogModelInfo(provider, model)) : []
+      if (!view.authenticated) return []
+      const { offered, badges } = discovered(view).catalog
+      return offered.map(model => catalogModelInfo(provider, model, badges.get(model.id)))
     },
   })
-  ctx.effect(() => () => { catalog.dispose() }, 'llm-deepseek-account: model catalog')
 }

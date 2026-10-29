@@ -4,7 +4,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { ACCOUNT_QUOTA_EXCEEDED_CODE, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { catalogModelInfo, ModelListingCache, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import { catalogModelInfo, createModelListingCache, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import type { DeepSeekRequestAuth, ListingView, ModelListing, ResolvedDeepSeekOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions, resolvePurehubOptions } from './config.ts'
 import { resolveAccountCatalog } from './resolve-catalog.ts'
@@ -69,7 +69,8 @@ export function apply(ctx: Context, config: Config): void {
       },
     }
   }
-  const catalog = new ModelListingCache({
+  const catalog = createModelListingCache(ctx, name, PROVIDER, {
+    settings: () => settings().catalog,
     credential: async url => account()?.resolveToken(url),
     load: (url, token, signal) => {
       const headers = settings().authScheme === 'bearer'
@@ -77,9 +78,6 @@ export function apply(ctx: Context, config: Config): void {
         : { [TOKEN_HEADER]: token }
       return requestModelListing(url, headers, signal)
     },
-    now: () => Date.now(),
-    info: (message) => { console.info(LOG_TAG, message) },
-    warn: (message) => { console.warn(LOG_TAG, message) },
   })
   let loggedListing: ModelListing | undefined
   /** Resolve the catalog for one view, reporting a declaration the gateway no longer lists once per listing. */
@@ -123,5 +121,4 @@ export function apply(ctx: Context, config: Config): void {
       return view.authenticated ? discovered(view).catalog.offered.map(model => catalogModelInfo(provider, model)) : []
     },
   })
-  ctx.effect(() => () => { catalog.dispose() }, 'llm-deepseek-account-purehub: model catalog')
 }
