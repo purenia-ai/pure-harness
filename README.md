@@ -31,7 +31,7 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 To run from a repository checkout:
 
 ```sh
-git clone https://git.rongdetu.cn/snake/pure-harness.git
+git clone https://github.com/purenia-ai/pure-harness.git
 cd pure-harness
 pnpm install
 pnpm run build
@@ -42,7 +42,7 @@ pnpm dsh web
 
 ## Community and support
 
-- Report bugs and request features in the [fork's issue tracker](https://git.rongdetu.cn/snake/pure-harness/issues).
+- Report bugs and request features in the [fork's issue tracker](https://github.com/purenia-ai/pure-harness/issues).
 - Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
 - The [DeepSeek Harness Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions) and its Discord belong to the upstream project, not to this fork.
 

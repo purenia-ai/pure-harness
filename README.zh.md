@@ -35,7 +35,7 @@ npx @deepseek-ai/dsh web
 如需从仓库源码运行：
 
 ```sh
-git clone https://git.rongdetu.cn/snake/pure-harness.git
+git clone https://github.com/purenia-ai/pure-harness.git
 cd pure-harness
 pnpm install
 pnpm run build
@@ -46,7 +46,7 @@ pnpm dsh web
 
 ## 社区与支持
 
-- 在本分支的 [issue 追踪](https://git.rongdetu.cn/snake/pure-harness/issues)中提交反馈或 bug 报告。
+- 在本分支的 [issue 追踪](https://github.com/purenia-ai/pure-harness/issues)中提交反馈或 bug 报告。
 - 为你的插件仓库添加 [`dsh-plugin`](https://github.com/topics/dsh-plugin) 话题，便于被发现。
 - [DeepSeek Harness Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions) 及其 Discord 属于上游项目，不属于本分支。
 
