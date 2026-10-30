@@ -134,4 +134,4 @@ git push origin HEAD && git push origin --tags
 - 清单页面名尚未带版本号，历史清单会被覆盖。
 - **产物名 `deepseek-harness-*` 仍残留在这些地方**（`8d956a930e` 改名时漏掉；已修 `package-macos.ts` / `package-target.ts` / 对应夹具）：`desktop-build-version-discovery.ts`（正则 + bucket 前缀）、`desktop-upload-plan.ts`、`retain-desktop-ci.ts`、`installed-update-distribution.ts`。**`--build-version auto` 会因为正则不匹配而看不到本地产物。**
 - **打包本机实测**（2026-10-15，Apple Silicon）：`package:mac:arm64:unsigned` 成功。两条环境前提：`ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`（github 不可达）；以及**必须清掉 harness 注入的 `DSH_*` 变量**（`env -u DSH_HOME -u DSH_PROFILE -u DSH_PROFILE_DIR -u DSH_SESSION_ID -u DSH_SHELL -u DSH_WEB_URL`），否则打包版 Host 的 HTTP 冒烟会超时。
-- **文档站源链接与测试不一致（2 个测试红，既有问题）**：`scripts/project-doc-site.ts` 的 `REPOSITORY_URL` 指向上游 GitHub，而 `scripts/project-doc-site.spec.ts` 期望本仓 `git.rongdetu.cn/snake/pure-harness`。要么改实现（需先确认本仓对外可达），要么把测试改回上游。
+- **文档站源链接与测试不一致（2 个测试红，既有问题）**：`scripts/project-doc-site.ts` 的 `REPOSITORY_URL` 指向上游 GitHub，而 `scripts/project-doc-site.spec.ts` 期望本仓 GitHub 地址。要么改实现（需先确认本仓对外可达），要么把测试改回上游。

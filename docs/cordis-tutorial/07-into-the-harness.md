@@ -106,4 +106,4 @@ Where to go next:
 - The generated `cordis-surface` regions on the [subsystem pages](../subsystems/core.md) — everything you can inject and listen to, each on its owning page.
 - [Architecture](../architecture.md) — the system map these plugins live in.
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

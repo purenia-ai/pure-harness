@@ -85,14 +85,14 @@ describe('PureHub badge assembled snapshot', () => {
 
       - Local PNG: [\`dsh-badge.png\`](dsh-badge.png), 726×120 source image; render at 121×20
       - Shields.io image URL: \`https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square\`
-      - Project URL: \`https://git.rongdetu.cn/snake/pure-harness\`
+      - Project URL: \`https://github.com/purenia-ai/pure-harness\`
 
       ## Markdown
 
       Use this linked badge in Markdown:
 
       \`\`\`markdown
-      [![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+      [![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)
       \`\`\`
 
       If attribution should not be linked, use:
@@ -124,14 +124,14 @@ describe('PureHub badge assembled snapshot', () => {
 
       - Local PNG: [\`dsh-badge.png\`](dsh-badge.png), 726×120 source image; render at 121×20
       - Shields.io image URL: \`https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square\`
-      - Project URL: \`https://git.rongdetu.cn/snake/pure-harness\`
+      - Project URL: \`https://github.com/purenia-ai/pure-harness\`
 
       ## Markdown
 
       Use this linked badge in Markdown:
 
       \`\`\`markdown
-      [![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+      [![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)
       \`\`\`
 
       If attribution should not be linked, use:

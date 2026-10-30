@@ -106,4 +106,4 @@ logger 会先触发：`tools/result` 在结果物化过程中发出，发生在 
 - [子系统页面](../subsystems/core.zh.md)上生成的 `cordis-surface` 区块：可以注入和监听的所有内容，各在其所属页面上。
 - [架构](../architecture.zh.md)：这些插件所处的系统地图。
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

@@ -92,4 +92,4 @@ One caveat worth knowing early: a config entry whose module cannot be **resolved
 
 Next: [Lifecycle and effects](02-lifecycle-and-effects.md) — what happens when a plugin unloads.
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

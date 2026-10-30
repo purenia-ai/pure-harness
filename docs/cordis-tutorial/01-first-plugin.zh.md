@@ -92,4 +92,4 @@ export function apply(ctx: Context) {
 
 下一章：[生命周期与 effect](02-lifecycle-and-effects.zh.md)：插件卸载时会发生什么。
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

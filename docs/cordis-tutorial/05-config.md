@@ -108,4 +108,4 @@ The loader used in this repo supports a `!!js` tag for config values that must b
 
 Next: [Composition and HMR](06-composition-and-hmr.md) — treating `cordis.yml` as the application.
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

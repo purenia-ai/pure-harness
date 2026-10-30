@@ -141,4 +141,4 @@ harness 使用 waterfall 处理协作插件可以包装或回答的决策：[`ag
 
 下一章：[配置](05-config.zh.md)：来自 `cordis.yml` 的插件选项。
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

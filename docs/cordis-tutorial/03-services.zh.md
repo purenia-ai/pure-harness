@@ -95,4 +95,4 @@ export function apply(ctx: Context) {
 
 下一章：[事件](04-events.zh.md)：无需共享服务即可通信。
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)

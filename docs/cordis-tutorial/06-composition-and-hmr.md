@@ -110,4 +110,4 @@ needs-timer is PENDING — a required service is missing
 
 Next: [Into the harness](07-into-the-harness.md) — the same patterns against real harness services.
 
-[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://git.rongdetu.cn/snake/pure-harness)
+[![](https://img.shields.io/badge/powered_by-PureHub-3260EB?style=flat-square)](https://github.com/purenia-ai/pure-harness)
