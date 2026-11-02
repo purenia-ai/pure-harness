@@ -68,7 +68,7 @@
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-typert-protocol": "workspace:*",
     "@deepseek-ai/dsh-util-values": "workspace:*",
-    "ws": "^8.18.3",
+    "ws": "^8.22.0",
     "zod": "4.4.3"
   },
   "peerDependencies": {
@@ -143,7 +143,7 @@
     "@deepseek-ai/dsh-tools": "workspace:*",
     "@deepseek-ai/dsh-typert-registry": "workspace:*",
     "@deepseek-ai/dsh-workspace": "workspace:*",
-    "@types/ws": "^8.18.1",
+    "@types/ws": "^8.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
