@@ -72,6 +72,26 @@ This project is a modified fork of DeepSeek Harness (MIT), Copyright (c) 2026 De
 }
 ```
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org)
+
+- Committers and reviewers: [Members](https://github.com/orgs/purenia-ai/people)
+- Approvers: [Owners](https://github.com/orgs/purenia-ai/people?query=role%3Aowner)
+- Every release build must be manually approved before signing.
+
+### Privacy policy
+
+PureHub Desktop does not transfer any information to networked systems beyond:
+
+- the update feed (version metadata and package downloads) at cdn.puresnake.com,
+- our backend (hub.puresnake.com) when you explicitly sign in with an account,
+- plugin downloads from the marketplace when you explicitly choose to install one.
+
+No telemetry is collected or transmitted by the application itself. Commands you
+run and files you work on stay on your machine unless you explicitly send them
+to a model provider you configure.
+
 ## License
 
 [MIT](LICENSE) — the original DeepSeek copyright notice is retained verbatim; PURESNAKE's modifications are noted in the same file.

@@ -76,6 +76,25 @@ pnpm dsh web
 }
 ```
 
+## 代码签名策略
+
+免费代码签名由 [SignPath.io](https://about.signpath.io) 提供，证书来自 [SignPath Foundation](https://signpath.org)
+
+- 提交者与审查者：[组织成员](https://github.com/orgs/purenia-ai/people)
+- 审批人：[组织所有者](https://github.com/orgs/purenia-ai/people?query=role%3Aowner)
+- 每次发布构建在签名前都必须经过人工审批。
+
+### 隐私政策
+
+除以下情形外，PureHub Desktop 不会向任何网络系统传输信息：
+
+- cdn.puresnake.com 的更新源（版本元数据与安装包下载）；
+- 你主动登录账号时，我们的后端 hub.puresnake.com；
+- 你主动选择安装插件时，插件市场的插件下载。
+
+应用本身不收集、也不上传任何遥测数据。你执行的命令和你操作的文件都保留在本机，
+除非你主动将它们发送给你自己配置的模型服务商。
+
 ## 许可证
 
 [MIT](LICENSE) —— 原始 DeepSeek 版权声明按原文保留；PURESNAKE 的修改已在同一文件中注明。
