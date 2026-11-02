@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Synchronisation des sessions avec le hub",
+    "description": "Archive les sessions actives dans la visionneuse du hub."
+  }
+}

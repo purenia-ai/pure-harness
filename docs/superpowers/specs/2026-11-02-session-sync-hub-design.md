@@ -28,7 +28,7 @@ DSH 会话目前只落在本机 `~/.dsh/sessions/`（每会话一个只追加的
 
 `f39c9a8`（2026-09-16）已实现：
 
-- 写：`POST /api/session-trace/save`，`X-API-Key` / `Bearer` 鉴权（`long-sys ApiKeyAuthFilter`，路径已加入 `apikey.auth.paths`），分片追加、按 `(runtime, session_id)` upsert、消息按 `UNIQUE(trace_id, seq)` 幂等、`reset`/`finalBatch` 语义。
+- 写：`POST /api/session-trace/save`，由全局登录过滤器按 `Authorization: Bearer <OAuth2 access token>` 识别登录用户（无需 API Key），分片追加、按 `(runtime, session_id)` upsert、消息按 `UNIQUE(trace_id, seq)` 幂等、`reset`/`finalBatch` 语义。
 - 读：`GET /run/session-trace/list|show`（登录态）+ `session-traces.html` 查看页。
 
 **必须改的两处：**
@@ -174,11 +174,13 @@ Client: ui-session-sync
     debounceMs: 5000
     maxBatchMessages: 200
     maxBatchBytes: 2097152
+    maxConcurrentSessions: 2
 ```
 
-- API key：`cordis.patch.yml` 用 `!!js` 读 `process.env.PUREHUB_SESSION_SYNC_KEY`，不落仓库、不落明文配置、不进日志
-- 缺失 key：插件不启用；设置页与会话菜单显示「未配置密钥」
-- 服务端需 `sys_api_key` 一条具备 `/api/session-trace/**` 权限的 key（`apikey.auth.paths` 已含该前缀）
+- 认证：随请求带当前登录账号的 OAuth2 access token（`Authorization: Bearer <jwt>`）。Host 侧用 `ctx.deepseekAccount.resolveToken(endpoint)` 获取——按 origin 限定、临近过期自动刷新，不落配置、不落日志
+- 未登录：插件不上传但保留队列；登录后下一条事件自动继续，无需重启
+- `401`：调用 `rejectToken` 丢弃当前 token，按退避重新取 token 重试；`404` 视为接口配置错误，停止该会话
+- 服务端：`/api/session-trace/**` 不加入 `apikey.auth.paths`，由 long-sys 全局登录过滤器 `include("/**").verifyLogined()` 接管；其 `verifyLogined` 优先识别 Bearer JWT（stateless 登录），上传者由 token claims 装配。与 `/api/crosslist/**` 使用同一机制，服务器无需新增配置。
 
 ## 10. 错误处理与可观测性
 
@@ -211,7 +213,20 @@ Client: ui-session-sync
 | 项 | 说明 |
 |---|---|
 | `pure-app` 请求体上限 | 未实测，若默认 1 MiB 需下调 `maxBatchBytes`；实施第一步即验 |
-| 生产 `apikey.auth.paths` | 需确认服务器外部 `app.yml` 已含 `/api/session-trace/**`（缺失则接口裸奔） |
+| 登录过滤器覆盖 | `/api/session-trace/**` 依赖框架默认 `include("/**").verifyLogined()`；若某部署显式排除 `/api/**` 需自行加入 |
 | 水位事件量 | 每批一条 `delivery-accepted` 事件，会轻微增长会话日志；如不可接受改为每 N 批记一次 |
 | 历史会话 | 一期不回填；查看页只看到启用后开始的会话 |
 | 隐私 | 正文/思考/工具参数默认上传，需在设置页明示；不采集环境变量与文件内容以外的系统信息 |
+
+## 14. 实施修订（相对初稿）
+
+| 项 | 初稿 | 实施采用 | 原因 |
+|---|---|---|---|
+| 单会话开关存储 | 会话日志事件 | **Host 设置文档字段 `disabledSessions`**（volatile） | 客户端读写走现成的 `ctx.configForms`，不需要新造 Typert API 包；开关与全局开关同源 |
+| 事件→行映射 | 工具调用/结果合并进 assistant 行 | **一个事件一行**（`tool/call`、`tool/result` 各成 `role=tool` 行） | 行 `seq` 直接用事件 seq，避免为合并造合成序号；查看页已支持 `tool` 角色 |
+| 包位置 | 两个 `packages/experimental/*` | `packages/session/session-sync-hub`（Host）+ `packages/client/ui-session-sync`（Client） | experimental 包不允许被发布包依赖，而 Host 需由 `bundle/base` 挂载 |
+| 水位 | 会话日志事件 | 同初稿（`session-sync-hub/delivery-accepted`） | 与会话日志上传一致；重启从日志 fold |
+| 思考内容 | 标记 + 配置 | 同初稿（`【思考】` 段落，`uploadReasoning` 默认开） | — |
+| 凭据 | `sys_api_key`（`PUREHUB_SESSION_SYNC_KEY` 环境变量） | **登录账号的 OAuth2 access token**（`Authorization: Bearer`，`ctx.deepseekAccount.resolveToken` 获取/刷新） | 免单独发密钥；上传者与登录账号一致；服务端不需要新的配置项 |
+
+Host 插件挂载点：`packages/bundle/base/cordis.patch.yml`，仅配置 `endpoint`；请求带当前登录账号的 access token，未登录时不产生任何请求。

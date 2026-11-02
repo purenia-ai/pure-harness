@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sincronización de sesiones con hub",
+    "description": "Archiva las sesiones activas en el visor de sesiones del hub."
+  }
+}
