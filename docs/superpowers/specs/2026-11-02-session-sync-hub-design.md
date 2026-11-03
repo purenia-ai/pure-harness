@@ -230,3 +230,17 @@ Client: ui-session-sync
 | 凭据 | `sys_api_key`（`PUREHUB_SESSION_SYNC_KEY` 环境变量） | **登录账号的 OAuth2 access token**（`Authorization: Bearer`，`ctx.deepseekAccount.resolveToken` 获取/刷新） | 免单独发密钥；上传者与登录账号一致；服务端不需要新的配置项 |
 
 Host 插件挂载点：`packages/bundle/base/cordis.patch.yml`，仅配置 `endpoint`；请求带当前登录账号的 access token，未登录时不产生任何请求。
+
+## 15. 二期：目标（goal）同步
+
+`goal/change` 事件不产生消息行，一期被 `map.ts` 的 `default` 分支丢弃。二期把它接进同一条认证与重试管道，但使用独立端点和独立队列：
+
+| 项 | 决定 |
+|---|---|
+| 端点 | `POST {endpoint}/api/session-goal/save`；hub 承接端契约见 purehub `docs/session-goal-persistence-20261103.md` |
+| 映射 | `GoalSnapshotChangeMeta` → 一条快照；`GoalClearChangeMeta` → `{ operation: 'clear', cleared: true }`；映射不出完整快照的事件直接跳过 |
+| 队列 | 与消息批次分开（`goals` / `goalChain` / `goalTimer`），任一接口失败不拖慢另一个 |
+| 水位 | 不新增会话事件。hub 以 `(runtime, session_id, goal_id, revision)` 去重，重发快照幂等 |
+| 404 | 视为 hub 尚未部署该接口：快照留在队列、只警告一次、下一次目标变更重试，部署后自愈 |
+| 配置 | `uploadGoals`（默认开）、`maxBatchGoals`（默认 100） |
+| 不做 | 目标回读、目标验收、跨会话目标（lineage） |
