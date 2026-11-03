@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-session-sync",
-  "description": "Session-header sync toggle and General settings switches for hub session upload",
+  "description": "Session more-actions sync row and General settings switches for hub session upload",
   "version": "0.2.2-alpha.2",
   "type": "module",
   "main": "lib/index.js",
@@ -36,7 +36,8 @@
       "inject": [
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-settings"
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-session-log-export"
       ],
       "platform": "web"
     }
@@ -56,6 +57,7 @@
     "@deepseek-ai/dsh-client-ui-settings": "workspace:*",
     "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
+    "@deepseek-ai/dsh-session-log-export": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

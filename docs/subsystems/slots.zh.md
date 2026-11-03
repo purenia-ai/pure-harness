@@ -131,6 +131,7 @@ root [AppFrame]
       │     ├─ conversation.session.header.lineage
       │     ├─ conversation.session.header.actions
       │     ├─ conversation.session.header.utilities
+      │     │  └─ conversation.session.header.utilities.actions
       │     ├─ conversation.session.header.views.actions
       │     └─ conversation.session.header.corner
       └─ calls Factory: conversation.content

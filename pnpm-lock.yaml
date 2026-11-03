@@ -5473,6 +5473,9 @@ importers:
       '@deepseek-ai/dsh-session':
         specifier: workspace:*
         version: link:../../core/session
+      '@deepseek-ai/dsh-session-log-export':
+        specifier: workspace:*
+        version: link:../../session-query/session-log-export
       react:
         specifier: ^18.2.0
         version: 18.3.1

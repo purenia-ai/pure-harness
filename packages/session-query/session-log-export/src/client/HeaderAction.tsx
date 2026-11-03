@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
-import type { InjectFace } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import {
   Button, IconCopyOutlineRegular, IconDownloadOutlineRegular, IconEllipsisOutlineRegular,
-  IconPaperPlaneOutlineRegular, Menu,
+  IconPaperPlaneOutlineRegular, Menu, MenuItemButton,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { SessionLogDownloadDialog, type SessionLogDownloadDialogProps } from './Dialog.tsx'
 import type { SessionLogDownloadDialogInjected } from './Dialog.tsx'
@@ -35,25 +35,29 @@ export interface SessionLogDownloadHeaderInjected
   openFeedback: (sessionId: SessionId) => void
 }
 
-/** Session download props plus the optional feedback action. */
-export type SessionLogDownloadHeaderProps = SessionLogDownloadDialogProps & InjectFace<SessionLogDownloadHeaderInjected>
+/** Session download props plus the optional feedback action and contributed menu rows. */
+export type SessionLogDownloadHeaderProps =
+  SessionLogDownloadDialogProps
+  & PropsRenderSlots<'conversation.session.header.utilities.actions'>
+  & InjectFace<SessionLogDownloadHeaderInjected>
 
 /**
- * Render the Session Header menu with Markdown copy, download, and optional
- * feedback actions.
- * @param props - Session runtime, download and copy state, and localized copy.
+ * Render the Session Header menu with Markdown copy, download, contributed
+ * rows, and the optional feedback action.
+ * @param props - Session runtime, download and copy state, contributed rows, and localized copy.
  * @returns the persistent Header action and Session-scoped dialog.
  */
 export function SessionLogDownloadHeaderAction(props: SessionLogDownloadHeaderProps): ReactNode {
   const {
     sessionId, useSessionLogDownload, useSessionMarkdownCopy, useFeedbackAvailable,
-    request, copyMarkdown, openFeedback, t,
+    request, copyMarkdown, openFeedback, renderSlot, t,
   } = props
   const feedbackAvailable = useFeedbackAvailable(value => value)
   const entry = useSessionLogDownload(state => state.bySession[String(sessionId)])
   const copying = useSessionMarkdownCopy(state => state.copying)
   const busy = entry?.status === 'downloading'
   const [open, setOpen] = useState(false)
+  const close = (): void => { setOpen(false) }
 
   return (
     <>
@@ -61,16 +65,14 @@ export function SessionLogDownloadHeaderAction(props: SessionLogDownloadHeaderPr
         open={open}
         align="end"
         dense
-        onClose={() => { setOpen(false) }}
+        onClose={close}
         items={[
           { id: 'copy', label: t('menu.copyMarkdown'), icon: <IconCopyOutlineRegular />, disabled: copying },
           { id: 'download', label: t('menu.download'), icon: <IconDownloadOutlineRegular />, disabled: busy },
-          ...feedbackAvailable ? [{ id: 'feedback', label: t('menu.feedback'), icon: <IconPaperPlaneOutlineRegular /> }] : [],
         ]}
         onSelect={(id) => {
-          setOpen(false)
-          if (id === 'feedback') openFeedback(sessionId)
-          else if (id === 'copy') void copyMarkdown(sessionId)
+          close()
+          if (id === 'copy') void copyMarkdown(sessionId)
           else void request(sessionId)
         }}
         anchor={(
@@ -86,7 +88,17 @@ export function SessionLogDownloadHeaderAction(props: SessionLogDownloadHeaderPr
             <IconEllipsisOutlineRegular />
           </Button>
         )}
-      />
+      >
+        {renderSlot('conversation.session.header.utilities.actions', { onDismiss: close })}
+        {feedbackAvailable && (
+          <MenuItemButton icon={<IconPaperPlaneOutlineRegular />} onSelect={() => {
+            close()
+            openFeedback(sessionId)
+          }}>
+            {t('menu.feedback')}
+          </MenuItemButton>
+        )}
+      </Menu>
       <SessionLogDownloadDialog {...props} />
     </>
   )

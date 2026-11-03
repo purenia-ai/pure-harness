@@ -21,9 +21,29 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
+/** Owner share of the Session Header's more-actions menu rows. */
+export interface SessionHeaderMenuActionOwnerProps {
+  /** Close the more-actions menu before the row acts. */
+  readonly onDismiss: () => void
+}
+
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     'session-log-download': SessionLogDownloadKey
+  }
+  interface SlotMap {
+    /**
+     * Rows of the Session Header's more-actions menu, in ascending `order`,
+     * after the built-in copy and download rows and before the optional
+     * feedback row. Each entry renders one `role="menuitem"` button such as
+     * ui-primitives' `MenuItemButton`, decides its own availability, and
+     * dismisses the menu through `onDismiss` before acting.
+     */
+    'conversation.session.header.utilities.actions': {
+      kind: 'list'
+      scope: 'session'
+      owner: SessionHeaderMenuActionOwnerProps
+    }
   }
 }
 
@@ -66,6 +86,7 @@ export function apply(ctx: ClientContext): void {
     name: 'conversation.session.header.utilities',
     id: 'session-log-download',
     locale: NS,
+    children: { 'conversation.session.header.utilities.actions': { kind: 'list', scope: 'session' } },
     inject: (): SessionLogDownloadHeaderInjected => ({
       hooks: {
         sessionLogDownload: controller.store,

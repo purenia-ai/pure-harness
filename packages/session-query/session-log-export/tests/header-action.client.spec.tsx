@@ -5,10 +5,12 @@ import { useSyncExternalStore } from 'react'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { GlobalStandardProps, SessionStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
 import { createSnapshotStore, type ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+import { MenuItemButton } from '@deepseek-ai/dsh-client-ui-primitives'
 import { SessionLogDownloadController } from '../src/client/controller.ts'
 import { SessionMarkdownCopyController, type SessionMarkdownClipboard } from '../src/client/copy-controller.ts'
 import { SessionLogDownloadHeaderAction } from '../src/client/HeaderAction.tsx'
 import type { SessionLogDownloadHeaderProps } from '../src/client/HeaderAction.tsx'
+import type { SessionHeaderMenuActionOwnerProps } from '../src/client/index.ts'
 import { en } from '../src/client/locales.ts'
 
 const SID = 'session-export-header' as SessionId
@@ -39,10 +41,11 @@ function bindSnapshot<State>(store: ObservableSnapshot<State>) {
   }
 }
 
-function bench(feedbackAvailable = false, copyController = new SessionMarkdownCopyController(
-  async () => new Response('markdown'),
-  clipboard,
-)) {
+function bench(
+  feedbackAvailable = false,
+  copyController = new SessionMarkdownCopyController(async () => new Response('markdown'), clipboard),
+  renderSlot: SessionLogDownloadHeaderProps['renderSlot'] = () => null,
+) {
   const controller = new SessionLogDownloadController(async () => new Response('zip'), vi.fn())
   const request = vi.fn((sessionId: SessionId) => controller.download(sessionId))
   const copyMarkdown = vi.fn((sessionId: SessionId) => copyController.copy(sessionId))
@@ -53,6 +56,7 @@ function bench(feedbackAvailable = false, copyController = new SessionMarkdownCo
   const useSessionMarkdownCopy = bindSnapshot(copyController.store)
   const props: SessionLogDownloadHeaderProps = {
     ...standard,
+    SessionProvider: ({ children }) => <>{children}</>,
     useSessionLogDownload,
     useSessionMarkdownCopy,
     useFeedbackAvailable: bindSnapshot(feedback),
@@ -60,10 +64,11 @@ function bench(feedbackAvailable = false, copyController = new SessionMarkdownCo
     request,
     copyMarkdown,
     dismiss,
+    renderSlot,
     t: translate,
   }
   const view = render(<SessionLogDownloadHeaderAction {...props} />)
-  return { controller, copyController, request, copyMarkdown, openFeedback, feedback, view }
+  return { controller, copyController, request, copyMarkdown, openFeedback, feedback, renderSlot, view }
 }
 
 afterEach(cleanup)
@@ -84,6 +89,25 @@ describe('Session export Header action', () => {
     expect(b.view.queryByRole('menuitem', { name: 'Feedback' })).toBeNull()
     expect(b.view.getByRole('menuitem', { name: 'Copy Session as Markdown' })).toBeTruthy()
     expect(b.view.getByRole('menuitem', { name: 'Download session log' })).toBeTruthy()
+  })
+
+  it('renders contributed rows between the download row and the feedback row', () => {
+    // The generic render share cannot be written as a plain function; chat-view.client.spec casts its stub for the same reason.
+    const renderSlot = ((_key: string, owner: SessionHeaderMenuActionOwnerProps) => (
+      <MenuItemButton onSelect={owner.onDismiss}>Contributed row</MenuItemButton>
+    )) as SessionLogDownloadHeaderProps['renderSlot']
+    const b = bench(true, undefined, renderSlot)
+    fireEvent.click(b.view.getByRole('button', { name: 'More actions' }))
+    expect(b.view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
+      'Copy Session as Markdown',
+      'Download session log',
+      'Contributed row',
+      'Feedback',
+    ])
+    fireEvent.click(b.view.getByRole('menuitem', { name: 'Contributed row' }))
+    expect(b.view.queryByRole('menu')).toBeNull()
+    expect(b.request).not.toHaveBeenCalled()
+    expect(b.openFeedback).not.toHaveBeenCalled()
   })
 
   it('updates the open menu when feedback becomes available, unloads, and reloads', () => {
@@ -171,6 +195,7 @@ describe('Session export Header action', () => {
     const useSessionLogDownload = bindSnapshot(controller.store)
     const rerendered: SessionLogDownloadHeaderProps = {
       ...standard,
+      SessionProvider: ({ children }) => <>{children}</>,
       useSessionLogDownload,
       useSessionMarkdownCopy: bindSnapshot(b.copyController.store),
       useFeedbackAvailable: bindSnapshot(b.feedback),
@@ -178,6 +203,7 @@ describe('Session export Header action', () => {
       request: (sessionId: SessionId) => controller.download(sessionId),
       copyMarkdown: b.copyMarkdown,
       dismiss: (sessionId: SessionId) => { controller.dismiss(sessionId) },
+      renderSlot: b.renderSlot,
       t: translate,
     }
     b.view.rerender(<SessionLogDownloadHeaderAction {...rerendered} />)

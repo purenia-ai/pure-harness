@@ -14,7 +14,7 @@ function namespaceRow(revision: number) {
   return { ns: NAMESPACE, schema: {}, value: { enabled: true, uploadReasoning: true, disabledSessions: [] }, applies: 'live', secrets: [], revision }
 }
 
-it('registers the settings rows and header action only while the Host serves the namespace', async () => {
+it('registers the settings rows and Session menu row only while the Host serves the namespace', async () => {
   expect(hostApply).not.toThrow()
   const ctx = new Context()
   try {
@@ -29,23 +29,27 @@ it('registers the settings rows and header action only while the Host serves the
     const slots = ctx.get('slots') as SlotRegistry
     slots.register({ name: 'root', children: {
       'settings.general.item': { kind: 'list', scope: 'root' },
-      'conversation.session.header.actions': { kind: 'list', scope: 'session' },
+      'conversation.session.header.utilities.actions': { kind: 'list', scope: 'session' },
     } } as never, () => null)
     const fiber = ctx.plugin({ inject, apply })
     await fiber.await()
     await ctx.configForms.describe().ensure()
     expect(slots.entries('settings.general.item')).toHaveLength(0)
-    expect(slots.entries('conversation.session.header.actions')).toHaveLength(0)
+    expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(0)
 
     describe.mockResolvedValue({ ok: true, value: { writable: true, hasDocument: true, namespaces: [namespaceRow(1)] } })
     remote.emit('settings/document-updated', [NAMESPACE, 1])
     await vi.waitFor(() => { expect(slots.entries('settings.general.item')).toHaveLength(1) })
-    await vi.waitFor(() => { expect(slots.entries('conversation.session.header.actions')).toHaveLength(1) })
+    await vi.waitFor(() => { expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(1) })
     expect(slots.entries('settings.general.item')[0]!.options).toMatchObject({ id: NAMESPACE, order: 95 })
-    expect(slots.entries('conversation.session.header.actions')[0]!.options).toMatchObject({ id: 'session-sync', order: 30 })
+    expect(slots.entries('conversation.session.header.utilities.actions')[0]!.options).toMatchObject({ id: 'session-sync', order: 30 })
 
     const form = ctx.configForms.get(NAMESPACE)
+    const ready = form.getSnapshot()
     const set = vi.spyOn(form, 'set').mockResolvedValue(false)
+    vi.spyOn(form, 'getSnapshot')
+      .mockReturnValueOnce({ ...ready, value: undefined })
+      .mockReturnValue({ ...ready, value: { enabled: true, uploadReasoning: true, disabledSessions: ['session-a'] } })
     const face = slots.entries('settings.general.item')[0]!.inject!() as SyncFace & Record<string, unknown>
     await face.setEnabled(false)
     expect(set).toHaveBeenCalledWith('enabled', false)
@@ -53,12 +57,14 @@ it('registers the settings rows and header action only while the Host serves the
     expect(set).toHaveBeenCalledWith('uploadReasoning', true)
     await face.setMuted('session-a', true)
     expect(set).toHaveBeenLastCalledWith('disabledSessions', ['session-a'])
+    await face.setMuted('session-b', true)
+    expect(set).toHaveBeenLastCalledWith('disabledSessions', ['session-a', 'session-b'])
     await face.setMuted('session-a', false)
     expect(set).toHaveBeenLastCalledWith('disabledSessions', [])
 
     await fiber.dispose()
     expect(slots.entries('settings.general.item')).toHaveLength(0)
-    expect(slots.entries('conversation.session.header.actions')).toHaveLength(0)
+    expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(0)
   } finally {
     await ctx.fiber.dispose()
   }

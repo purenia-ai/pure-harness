@@ -400,8 +400,9 @@
     - id: ui-jobs
       name: '@deepseek-ai/dsh-client-ui-jobs'
 
-    # Fork: archive sessions to the hub session-trace endpoint; the header toggle
-    # and General switches edit the Host plugin's configuration document.
+    # Fork: archive sessions to the hub session-trace endpoint; the Session
+    # more-actions row and General switches edit the Host plugin's configuration
+    # document.
     - id: ui-session-sync
       name: '@deepseek-ai/dsh-client-ui-session-sync'
 

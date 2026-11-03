@@ -11,7 +11,6 @@ export const zh = {
   'settings.reasoningDescription': '把模型的思考过程一并以【思考】段落归档',
   'menu.synced': '同步已开',
   'menu.paused': '同步已停',
-  'menu.aria': '切换本会话的服务器同步',
 }
 
 /** Dictionary key set. */
@@ -25,7 +24,6 @@ export const en: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Archive model reasoning as a [Thinking] section.',
   'menu.synced': 'Sync on',
   'menu.paused': 'Sync off',
-  'menu.aria': 'Toggle server sync for this session',
 }
 
 /** Japanese dictionary. */
@@ -36,7 +34,6 @@ export const ja: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'モデルの思考を【思考】段落として保存します。',
   'menu.synced': '同期オン',
   'menu.paused': '同期オフ',
-  'menu.aria': 'このセッションのサーバー同期を切り替える',
 }
 
 /** Spanish dictionary. */
@@ -47,7 +44,6 @@ export const es: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Archiva el razonamiento del modelo como una sección [Pensamiento].',
   'menu.synced': 'Sincronización activa',
   'menu.paused': 'Sincronización pausada',
-  'menu.aria': 'Alternar la sincronización de esta sesión',
 }
 
 /** French dictionary. */
@@ -58,7 +54,6 @@ export const fr: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Archive le raisonnement du modèle dans une section 【Réflexion】.',
   'menu.synced': 'Synchro active',
   'menu.paused': 'Synchro en pause',
-  'menu.aria': 'Basculer la synchronisation de cette session',
 }
 
 /** German dictionary. */
@@ -69,7 +64,6 @@ export const de: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Archiviert den Denkprozess des Modells als 【Denken】-Abschnitt.',
   'menu.synced': 'Sync aktiv',
   'menu.paused': 'Sync pausiert',
-  'menu.aria': 'Server-Synchronisierung dieser Sitzung umschalten',
 }
 
 /** Russian dictionary. */
@@ -80,7 +74,6 @@ export const ru: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Архивирует рассуждения модели как раздел 【Размышление】.',
   'menu.synced': 'Синхронизация включена',
   'menu.paused': 'Синхронизация приостановлена',
-  'menu.aria': 'Переключить синхронизацию этой сессии',
 }
 
 /** Portuguese dictionary. */
@@ -91,5 +84,4 @@ export const pt: Record<SyncKey, string> = {
   'settings.reasoningDescription': 'Arquiva o raciocínio do modelo como uma seção 【Pensamento】.',
   'menu.synced': 'Sincronização ativa',
   'menu.paused': 'Sincronização pausada',
-  'menu.aria': 'Alternar a sincronização desta sessão',
 }
