@@ -11,8 +11,8 @@ import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { SessionSeq, type Session, type SessionEvent } from '@deepseek-ai/dsh-session'
 import { splitBatches } from './batch.ts'
-import { mapEvent } from './map.ts'
-import type { SyncMeta, SyncMessage, SyncPayload } from './types.ts'
+import { mapEvent, mapGoalChange } from './map.ts'
+import type { SyncGoal, SyncGoalPayload, SyncMeta, SyncMessage, SyncPayload } from './types.ts'
 
 export type * from './types.ts'
 
@@ -31,6 +31,8 @@ export interface Config {
   uploadReasoning: Volatile<boolean>
   /** Archive system and developer prompts. */
   uploadSystemMessages: Volatile<boolean>
+  /** Upload `goal/change` snapshots to the hub goal archive. */
+  uploadGoals: Volatile<boolean>
   /** Truncate one archived tool result beyond this many characters. */
   toolResultCap: number
   /** Quiet window after the last event before a session's queue drains. */
@@ -39,6 +41,8 @@ export interface Config {
   maxBatchMessages: number
   /** Largest serialized `messages` array in one save request. */
   maxBatchBytes: number
+  /** Largest goal count in one goal save request. */
+  maxBatchGoals: number
   /** Sessions whose queues may drain at the same time. */
   maxConcurrentSessions: number
   /** Session ids the user muted; live-editable from the settings form. */
@@ -51,10 +55,12 @@ export const Config = z.object({
   enabled: z.boolean().default(true).volatile(),
   uploadReasoning: z.boolean().default(true).volatile(),
   uploadSystemMessages: z.boolean().default(true).volatile(),
+  uploadGoals: z.boolean().default(true).volatile(),
   toolResultCap: z.number().step(1).min(1).default(8000),
   debounceMs: z.number().step(1).min(100).max(600_000).default(5_000),
   maxBatchMessages: z.number().step(1).min(1).default(200),
   maxBatchBytes: z.number().step(1).min(1024).default(2 * 1024 * 1024),
+  maxBatchGoals: z.number().step(1).min(1).default(100),
   maxConcurrentSessions: z.number().step(1).min(1).max(32).default(2),
   disabledSessions: z.array(z.string()).default([]).volatile(),
 })
@@ -74,6 +80,10 @@ const RETRY_BASE_MS = 1_000
 const RETRY_MAX_MS = 60_000
 /** Stop buffering when one session's backlog reaches this many events. */
 const MAX_QUEUED_EVENTS = 5_000
+/** Stop buffering when one session's pending goals reach this many rows. */
+const MAX_QUEUED_GOALS = 200
+/** Hub goal archive path appended to the configured origin. */
+const GOAL_PATH = '/api/session-goal/save'
 /** Acceptance markers already seen beyond the scanned prefix, per Session instance. */
 const scanned = new WeakMap<Session, { events: number; throughSeq: number }>()
 
@@ -95,6 +105,13 @@ interface Queue {
   model: string | undefined
   stopped: boolean
   disposed: boolean
+  /** Goal snapshots waiting for the goal archive, in the order the log recorded them. */
+  readonly goals: SyncGoal[]
+  goalChain: Promise<void>
+  goalTimer: ReturnType<typeof setTimeout> | undefined
+  goalAttempts: number
+  /** Whether the one-time "goal archive is missing" warning has been logged. */
+  goalUnavailableLogged: boolean
 }
 
 /**
@@ -159,6 +176,8 @@ export function apply(ctx: Context, config: Config): void {
     const created: Queue = {
       session, events: [], chain: Promise.resolve(), attempts: 0, uploadedMessages: 0,
       title: undefined, model: undefined, stopped: false, disposed: false, timer: undefined,
+      goals: [], goalChain: Promise.resolve(), goalTimer: undefined, goalAttempts: 0,
+      goalUnavailableLogged: false,
     }
     queues.set(key, created)
     return created
@@ -169,8 +188,20 @@ export function apply(ctx: Context, config: Config): void {
 
   const account = (): AccountLike | undefined => ctx.get('deepseekAccount') as AccountLike | undefined
 
-  const post = async (payload: SyncPayload, token: string): Promise<void> => {
-    const url = `${config.endpoint.replace(/\/+$/u, '')}/api/session-trace/save`
+  /**
+   * Post one archive batch.
+   * @param path - endpoint path appended to the configured origin.
+   * @param payload - request body.
+   * @param token - account access token.
+   * @param permanentOn404 - whether a missing endpoint is a configuration error that stops the session.
+   */
+  const postJson = async (
+    path: string,
+    payload: SyncPayload | SyncGoalPayload,
+    token: string,
+    permanentOn404: boolean,
+  ): Promise<void> => {
+    const url = `${config.endpoint.replace(/\/+$/u, '')}${path}`
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
@@ -188,8 +219,14 @@ export function apply(ctx: Context, config: Config): void {
       throw new Error('session sync rejected the account token (401)')
     }
     if (response.status === 404) {
-      const failure = new Error('session sync endpoint not found (404); check the configured hub origin')
-      ;(failure as Error & { permanent?: boolean }).permanent = true
+      const failure = new Error(permanentOn404
+        ? 'session sync endpoint not found (404); check the configured hub origin'
+        : 'the hub does not serve the goal archive yet (404)')
+      if (permanentOn404) {
+        ;(failure as Error & { permanent?: boolean }).permanent = true
+      } else {
+        ;(failure as Error & { unavailable?: boolean }).unavailable = true
+      }
       throw failure
     }
     if (!response.ok) throw new Error(`session sync failed: HTTP ${String(response.status)}`)
@@ -197,15 +234,23 @@ export function apply(ctx: Context, config: Config): void {
     if (result?.ok !== true) throw new Error('session sync: the hub did not acknowledge the batch')
   }
 
-  const metaOf = async (session: Session, events: readonly SessionEvent[]): Promise<SyncMeta> => {
-    let ownerId: string | undefined
+  const post = (payload: SyncPayload, token: string): Promise<void> =>
+    postJson('/api/session-trace/save', payload, token, true)
+
+  /** Signed-in account id used for attribution; enrichment never blocks an upload. */
+  const ownerIdOf = async (): Promise<string | undefined> => {
     try {
       const platform = await account()?.getPlatformSession()
-      ownerId = platform?.userId ?? undefined
+      return platform?.userId ?? undefined
     } catch (error) {
       // Identity enrichment never blocks the archive.
       void error
+      return undefined
     }
+  }
+
+  const metaOf = async (session: Session, events: readonly SessionEvent[]): Promise<SyncMeta> => {
+    const ownerId = await ownerIdOf()
     const header = session.header
     return {
       ...(ownerId === undefined ? {} : { ownerId }),
@@ -327,6 +372,67 @@ export function apply(ctx: Context, config: Config): void {
     }, config.debounceMs)
   }
 
+  const drainGoals = (state: Queue): void => {
+    state.goalChain = state.goalChain.then(async () => {
+      const session = state.session
+      const pending = state.goals.splice(0)
+      if (pending.length === 0) return
+      if (!active(session) || !config.uploadGoals.get()) {
+        state.goals.unshift(...pending.slice(-MAX_QUEUED_GOALS))
+        return
+      }
+      const token = await account()?.resolveToken(config.endpoint)
+      if (token === undefined) {
+        // No signed-in account for the hub origin: keep the snapshots; the next goal change retries.
+        state.goals.unshift(...pending)
+        return
+      }
+      const ownerId = await ownerIdOf()
+      await acquireUpload()
+      try {
+        for (let index = 0; index < pending.length; index += config.maxBatchGoals) {
+          const batch = pending.slice(index, index + config.maxBatchGoals)
+          const payload: SyncGoalPayload = {
+            runtime: 'dsh',
+            sessionId: String(session.id),
+            goals: batch.map(goal => (ownerId === undefined ? goal : { ...goal, ownerId })),
+          }
+          await postJson(GOAL_PATH, payload, token, false)
+        }
+        state.goalAttempts = 0
+        state.goalUnavailableLogged = false
+      } catch (error) {
+        state.goals.unshift(...pending)
+        if ((error as { unavailable?: boolean }).unavailable === true) {
+          // The hub has not deployed the goal archive yet. Hold the snapshots and wait for the next goal
+          // change instead of retrying in a loop: deploying the endpoint turns this on without a restart.
+          if (!state.goalUnavailableLogged) {
+            state.goalUnavailableLogged = true
+            ctx.logger.warn(`session-sync-hub: ${String(session.id)} goal archive is not available on the hub yet; snapshots stay queued`)
+          }
+          return
+        }
+        state.goalAttempts++
+        const delay = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.min(state.goalAttempts, 6))
+        ctx.logger.warn(`session-sync-hub: ${String(session.id)} goal retry ${String(state.goalAttempts)} in ${String(delay)}ms: ${error instanceof Error ? error.message : String(error)}`)
+        state.goalTimer = setTimeout(() => { state.goalTimer = undefined; drainGoals(state) }, delay)
+      } finally {
+        releaseUpload()
+      }
+    }).catch((error: unknown) => {
+      ctx.logger.error(`session-sync-hub: unexpected goal failure ${error instanceof Error ? error.message : String(error)}`)
+    })
+  }
+
+  const scheduleGoals = (state: Queue): void => {
+    if (state.disposed) return
+    if (state.goalTimer !== undefined) clearTimeout(state.goalTimer)
+    state.goalTimer = setTimeout(() => {
+      state.goalTimer = undefined
+      drainGoals(state)
+    }, config.debounceMs)
+  }
+
   ctx.on('session/event', (session, event) => {
     const state = queueOf(session)
     const title = titleOf(event)
@@ -337,6 +443,17 @@ export function apply(ctx: Context, config: Config): void {
     if (event.type === 'assistant/message') {
       const model = (event.data.message as { source?: { model?: string } }).source?.model
       if (typeof model === 'string' && model.length > 0) state.model = model
+    }
+    const goal = mapGoalChange(event)
+    if (goal !== undefined) {
+      state.goals.push(goal)
+      if (state.goals.length > MAX_QUEUED_GOALS) {
+        state.goals.splice(0, state.goals.length - MAX_QUEUED_GOALS)
+        ctx.logger.warn(`session-sync-hub: ${String(session.id)} goal backlog trimmed to ${String(MAX_QUEUED_GOALS)} snapshots`)
+      }
+      if (state.goals.length >= config.maxBatchGoals) drainGoals(state)
+      else scheduleGoals(state)
+      return
     }
     if (!ARCHIVED_EVENT_TYPES.has(event.type)) return
     state.events.push(event)
@@ -355,7 +472,10 @@ export function apply(ctx: Context, config: Config): void {
     state.disposed = true
     if (state.timer !== undefined) clearTimeout(state.timer)
     state.timer = undefined
+    if (state.goalTimer !== undefined) clearTimeout(state.goalTimer)
+    state.goalTimer = undefined
     maintain(state, true)
-    void state.chain.then(() => { queues.delete(key) })
+    drainGoals(state)
+    void Promise.allSettled([state.chain, state.goalChain]).then(() => { queues.delete(key) })
   })
 }

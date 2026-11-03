@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Archive each live Session to a PureHub `session_traces` endpoint while the conversation runs. This function plugin injects `ctx.sessions` and owns the `session-sync-hub/delivery-accepted` event that records how far the hub has accepted. Uploads run beside the loop: a debounce window bounds request rate, per-request batching bounds payload size, and a failed attempt only postpones the next one.
+Archive each live Session to a PureHub `session_traces` endpoint while the conversation runs, and mirror every durable goal change to the hub goal archive. This function plugin injects `ctx.sessions` and owns the `session-sync-hub/delivery-accepted` event that records how far the hub has accepted. Uploads run beside the loop: a debounce window bounds request rate, per-request batching bounds payload size, and a failed attempt only postpones the next one.
 
 ## Table of Contents
 
@@ -29,10 +29,12 @@ Archive each live Session to a PureHub `session_traces` endpoint while the conve
 | `enabled` | `true` | Global switch; a settings-form write replaces this composition layer. |
 | `uploadReasoning` | `true` | Archive assistant reasoning as a `【思考】` section. |
 | `uploadSystemMessages` | `true` | Archive `system` and `developer` prompts. |
+| `uploadGoals` | `true` | Mirror `goal/change` snapshots to `/api/session-goal/save`. |
 | `toolResultCap` | `8000` | Truncate one archived tool result beyond this many characters. |
 | `debounceMs` | `5000` | Quiet window after the last archived event before a Session's queue drains. |
 | `maxBatchMessages` | `200` | Largest row count in one save request. |
 | `maxBatchBytes` | `2097152` | Largest serialized `messages` array in one save request. |
+| `maxBatchGoals` | `100` | Largest goal count in one goal save request. |
 | `maxConcurrentSessions` | `2` | Sessions whose queues may drain at the same time. |
 | `disabledSessions` | `[]` | Session ids the user muted; the session-header action appends or removes one id. |
 
@@ -53,10 +55,23 @@ One canonical event becomes one archived row, keyed by the event's own sequence:
 
 Every request also carries session facts the file-parsing runtimes never had: `ownerId` (the signed-in account), `startedAt` (the Session header's creation time), `lastEventAt`, `formatVersion`, `parentSessionId`, `agentPreset`, and the raw header JSON. The hub stores them in `session_trace_meta`.
 
+### Goal snapshots
+
+A `goal/change` event carries no message; it becomes one goal snapshot in a separate request to `/api/session-goal/save`, queued and retried independently of the message batch:
+
+| Event | Snapshot |
+|---|---|
+| `goal/change` with a whole goal | `goalId`, `revision`, `operation`, `phase`, `objective`, `maxGoalRounds`, `roundsStarted`, `blockedReason`, and ISO `goalCreatedAt` / `goalUpdatedAt` |
+| `goal/change` with a clear tombstone | `goalId`, `revision`, `operation=clear`, `cleared=true` |
+
+Every goal request carries `runtime` (`dsh`), `sessionId`, and the signed-in `ownerId`. The hub keys a goal by `(runtime, sessionId, goalId)` and deduplicates by `revision`, so re-sending a snapshot is harmless. Events the mapper cannot read as a complete snapshot are skipped rather than sent.
+
 <a id="retries-and-watermarks"></a>
 ## Retries and watermarks
 
 An accepted request appends `session-sync-hub/delivery-accepted` with the last uploaded sequence; later windows read that marker and resend only the suffix. A failed request keeps its rows queued and retries with exponential backoff up to one minute. A `401` discards the token through `rejectToken` so the next attempt refreshes it; a `404` stops the session as a configuration error. A redirect to the sign-in page is never treated as an acknowledgement: the batch stays queued and is retried with the next window. Session disposal flushes the remaining rows with `finalBatch` and `messageTotal`, so the hub can freeze the message count.
+
+Goal snapshots have their own queue and their own retry budget, so a failure on one endpoint never delays the other. Their watermark is the hub's own `(runtime, sessionId, goalId, revision)` key rather than a Session event: a snapshot re-sent after a restart or a retry is deduplicated by the hub. A `404` on the goal path means the hub does not serve that archive yet — the snapshots stay queued, one warning is logged, and the next goal change retries, so deploying the endpoint needs no restart.
 
 ## Model Experience
 
@@ -76,8 +91,9 @@ Does not change the model request prefix.
 
 ## Known Limitations and Deferred Work
 
-- **Live Sessions only** — sessions created before the plugin mounted are not backfilled; the archive starts with the next archived event.
+- **Live Sessions only** — sessions created before the plugin mounted are not backfilled; the archive starts with the next archived event. The same holds for goal snapshots recorded before the mount.
 - **Requires a hub sign-in** — without a stored account token the plugin keeps rows queued and uploads nothing; uploading resumes with the next archived event after sign-in, without a restart.
+- **Goal archive needs a hub deployment** — while the hub does not serve `/api/session-goal/save`, snapshots wait in the queue and retry on the next goal change; message archiving is unaffected either way.
 - **Settings-document session list** — per-session mute lives in the Host settings document, so it follows the machine rather than travelling with a Session fork.
 - **Tool rows are not paired** — a call and its result render as two rows; joining them needs a hub-side view change.
 - **Watermark growth** — each accepted batch appends one small event to the Session log.

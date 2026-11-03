@@ -1,7 +1,7 @@
 /** Translate canonical Session events into hub session-trace message rows. */
 
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
-import type { SyncMessage } from './types.ts'
+import type { SyncGoal, SyncMessage } from './types.ts'
 
 /** Options that decide which optional content the archive keeps. */
 export interface MapOptions {
@@ -88,5 +88,92 @@ export function mapEvent(event: SessionEvent, options: MapOptions): SyncMessage 
     }
     default:
       return undefined
+  }
+}
+
+/** Structural view of one durable `goal/change` payload; unknown shapes map to nothing. */
+interface GoalChangeLike {
+  readonly operation?: unknown
+  readonly goal?: {
+    readonly id?: unknown
+    readonly revision?: unknown
+    readonly objective?: unknown
+    readonly phase?: unknown
+    readonly maxGoalRounds?: unknown
+    readonly blockedReason?: { readonly code?: unknown; readonly message?: unknown }
+  }
+  readonly roundsStarted?: unknown
+  readonly createdAt?: unknown
+  readonly updatedAt?: unknown
+  readonly cleared?: { readonly id?: unknown; readonly revision?: unknown }
+}
+
+/** Durable goal phases the hub accepts. */
+const GOAL_PHASES: ReadonlySet<string> = new Set(['active', 'paused', 'blocked', 'complete'])
+/** Durable goal operations; anything else is never sent, so the hub cannot reject it forever. */
+const GOAL_OPERATIONS: ReadonlySet<string> = new Set([
+  'create', 'edit', 'pause', 'resume', 'complete', 'block', 'clear',
+])
+
+function positiveInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 ? value : undefined
+}
+
+function isoOf(value: unknown): string | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? new Date(value).toISOString() : undefined
+}
+
+function blockedOf(goal: GoalChangeLike['goal']): { code: string; message: string } | undefined {
+  const reason = goal?.blockedReason
+  if (typeof reason?.code !== 'string' || typeof reason.message !== 'string') return undefined
+  return { code: reason.code, message: reason.message }
+}
+
+/**
+ * Map one `goal/change` event to a hub goal snapshot.
+ * @param event - canonical Session event.
+ * @returns the snapshot, or undefined when the event is not a well-formed goal change.
+ */
+export function mapGoalChange(event: SessionEvent): SyncGoal | undefined {
+  const candidate = event as { type: string; data?: GoalChangeLike }
+  if (candidate.type !== 'goal/change') return undefined
+  const data = candidate.data
+  const operation = typeof data?.operation === 'string' && GOAL_OPERATIONS.has(data.operation)
+    ? data.operation
+    : undefined
+  if (operation === undefined) return undefined
+
+  if (operation === 'clear') {
+    const goalId = typeof data?.cleared?.id === 'string' ? data.cleared.id : undefined
+    const revision = positiveInteger(data?.cleared?.revision)
+    if (goalId === undefined || revision === undefined) return undefined
+    return { goalId, revision, operation, cleared: true }
+  }
+
+  const goal = data?.goal
+  const goalId = typeof goal?.id === 'string' ? goal.id : undefined
+  const revision = positiveInteger(goal?.revision)
+  const objective = typeof goal?.objective === 'string' ? goal.objective : undefined
+  const phase = typeof goal?.phase === 'string' && GOAL_PHASES.has(goal.phase) ? goal.phase : undefined
+  const maxGoalRounds = positiveInteger(goal?.maxGoalRounds)
+  if (goalId === undefined || revision === undefined || objective === undefined
+    || phase === undefined || maxGoalRounds === undefined) return undefined
+
+  const rounds = data?.roundsStarted
+  const roundsStarted = typeof rounds === 'number' && Number.isSafeInteger(rounds) && rounds >= 0 ? rounds : 0
+  const blocked = blockedOf(goal)
+  const createdAt = isoOf(data?.createdAt)
+  const updatedAt = isoOf(data?.updatedAt)
+  return {
+    goalId,
+    revision,
+    operation,
+    phase,
+    objective,
+    maxGoalRounds,
+    roundsStarted,
+    ...(blocked === undefined ? {} : { blockedReason: blocked }),
+    ...(createdAt === undefined ? {} : { goalCreatedAt: createdAt }),
+    ...(updatedAt === undefined ? {} : { goalUpdatedAt: updatedAt }),
   }
 }

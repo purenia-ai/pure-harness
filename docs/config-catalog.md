@@ -3321,6 +3321,46 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-session-reference -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-session-sync-hub -->
+<a id="deepseek-aidsh-session-sync-hub"></a>
+
+## `@deepseek-ai/dsh-session-sync-hub`
+
+- `inject`: `sessions`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/session/session-sync-hub/src/index.ts:25`](../packages/session/session-sync-hub/src/index.ts)
+
+```ts config-catalog
+/** Hub session-trace upload configuration. */
+export interface Config {
+  /** Hub origin; the endpoint path is appended and the origin also scopes the account token. */
+  endpoint: string
+  /** Global enablement, live-editable from the settings form. */
+  enabled: Volatile<boolean>
+  /** Archive assistant reasoning as a `【思考】` section. */
+  uploadReasoning: Volatile<boolean>
+  /** Archive system and developer prompts. */
+  uploadSystemMessages: Volatile<boolean>
+  /** Upload `goal/change` snapshots to the hub goal archive. */
+  uploadGoals: Volatile<boolean>
+  /** Truncate one archived tool result beyond this many characters. */
+  toolResultCap: number
+  /** Quiet window after the last event before a session's queue drains. */
+  debounceMs: number
+  /** Largest row count in one save request. */
+  maxBatchMessages: number
+  /** Largest serialized `messages` array in one save request. */
+  maxBatchBytes: number
+  /** Largest goal count in one goal save request. */
+  maxBatchGoals: number
+  /** Sessions whose queues may drain at the same time. */
+  maxConcurrentSessions: number
+  /** Session ids the user muted; live-editable from the settings form. */
+  disabledSessions: Volatile<string[]>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-session-sync-hub -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-session-telemetry-otel -->
 <a id="deepseek-aidsh-session-telemetry-otel"></a>
 
@@ -5015,6 +5055,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-schedule` | — | [`packages/client/ui-schedule/src/index.ts`](../packages/client/ui-schedule/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-secret-mask` | — | [`packages/client/ui-secret-mask/src/index.ts`](../packages/client/ui-secret-mask/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-session` | — | [`packages/client/ui-session/src/index.ts`](../packages/client/ui-session/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-session-sync` | — | [`packages/client/ui-session-sync/src/index.ts`](../packages/client/ui-session-sync/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings` | — | [`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-agent-loop` | — | [`packages/client/ui-settings-agent-loop/src/index.ts`](../packages/client/ui-settings-agent-loop/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-general` | — | [`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts) |

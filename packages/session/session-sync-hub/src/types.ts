@@ -40,6 +40,33 @@ export interface SyncPayload {
   meta?: SyncMeta
 }
 
+/** One goal snapshot recorded by a durable `goal/change` event. */
+export interface SyncGoal {
+  goalId: string
+  revision: number
+  operation: string
+  /** Absent on a clear tombstone. */
+  phase?: string
+  /** Absent on a clear tombstone. */
+  objective?: string
+  /** Absent on a clear tombstone. */
+  maxGoalRounds?: number
+  roundsStarted?: number
+  blockedReason?: { code: string; message: string }
+  ownerId?: string
+  goalCreatedAt?: string
+  goalUpdatedAt?: string
+  /** Present and true when this row is a clear tombstone. */
+  cleared?: boolean
+}
+
+/** One goal save request: snapshots of this Session's current and past goals. */
+export interface SyncGoalPayload {
+  runtime: 'dsh'
+  sessionId: string
+  goals: SyncGoal[]
+}
+
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
     /** Records that the hub accepted one delivery through `throughSeq`. */
