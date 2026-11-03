@@ -273,6 +273,8 @@ export function apply(ctx: Context, config: Config): void {
         meta,
       }
       let sent = 0
+      /** Last sequence this attempt recorded; a trailing marker is only needed past it. */
+      let recordedSeq = -1
       await acquireUpload()
       try {
         for (const batch of splitBatches(rows.map(row => row.message), config.maxBatchMessages, config.maxBatchBytes)) {
@@ -287,10 +289,14 @@ export function apply(ctx: Context, config: Config): void {
           await post(payload, token)
           state.uploadedMessages += batch.length
           sent += batch.length
-          if (last !== undefined) appendAccepted(session, last.seq)
+          if (last !== undefined) {
+            appendAccepted(session, last.seq)
+            recordedSeq = Number(last.seq)
+          }
           state.attempts = 0
         }
-        appendAccepted(session, tailSeq)
+        // Trailing events that map to no row advance the watermark past the last batch.
+        if (tailSeq > recordedSeq) appendAccepted(session, tailSeq)
       } catch (error) {
         // Restore the unsent part of this attempt so the next window retries it.
         state.events.unshift(...pending)

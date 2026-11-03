@@ -56,6 +56,7 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `event:sandbox/mode` | event | `516da4cdd6d2f1e5ce488e648578ca51f40e458f707b803e5b24de870e799415` | [`{ type: "sandbox/mode" }`](#persistence-type-sha256-516da4cdd6d2f1e5ce488e648578ca51f40e458f707b803e5b24de870e799415) |
 | `event:schedule/change` | event | `a0a2e5c42e1c929445ecd1cd70f49be6b66441894ec72c08e8ae332821d4a3cb` | [`{ type: "schedule/change" }`](#persistence-type-sha256-a0a2e5c42e1c929445ecd1cd70f49be6b66441894ec72c08e8ae332821d4a3cb) |
 | `event:session-log-deepseek/delivery-accepted` | event | `d63b8b8ffad9c02fd80c43a17df4f240c1fe8118ecca9de34f9d5871838ab5b9` | [`{ type: "session-log-deepseek/delivery-accepted" }`](#persistence-type-sha256-d63b8b8ffad9c02fd80c43a17df4f240c1fe8118ecca9de34f9d5871838ab5b9) |
+| `event:session-sync-hub/delivery-accepted` | event | `10508b7b5d59f30f162ee44d1429c1027bdf11aa628b1bae81d761a1326772c8` | [`{ type: "session-sync-hub/delivery-accepted" }`](#persistence-type-sha256-10508b7b5d59f30f162ee44d1429c1027bdf11aa628b1bae81d761a1326772c8) |
 | `event:session/end-seed` | event | `5e6db6e24948d4a853c71cb9fabd252ad051ce93d4672c1266cf837c1c17b84e` | [`{ type: "session/end-seed" }`](#persistence-type-sha256-5e6db6e24948d4a853c71cb9fabd252ad051ce93d4672c1266cf837c1c17b84e) |
 | `event:session/title` | event | `1b912703e2d64f91c99c675b8f805b01076c8325b905c1218ad81ef0b24909d5` | [`{ type: "session/title" }`](#persistence-type-sha256-1b912703e2d64f91c99c675b8f805b01076c8325b905c1218ad81ef0b24909d5) |
 | `event:session/title-llm-request` | event | `2e505098f9209e52eebd577f1a6f9d4e773ec4d78987aff28a7c786442b9f54c` | [`{ type: "session/title-llm-request" }`](#persistence-type-sha256-2e505098f9209e52eebd577f1a6f9d4e773ec4d78987aff28a7c786442b9f54c) |
@@ -899,6 +900,26 @@ Source: [`packages/session/session-title-llm/src/index.ts:57`](../packages/sessi
 ```
 
 Source: [`packages/session/session-log-deepseek/src/types.ts:81`](../packages/session/session-log-deepseek/src/types.ts)
+
+### `session-sync-hub/*`
+
+<a id="session-sync-hubdelivery-accepted--log-only"></a>
+
+#### `session-sync-hub/delivery-accepted` — log-only
+
+```ts persistence-catalog
+/** Records that the hub accepted one delivery through `throughSeq`. */
+'session-sync-hub/delivery-accepted': {
+  /** Session identity the accepted delivery carried. */
+  sessionId: import('@deepseek-ai/dsh-session/types').SessionId
+  /** Accepted Session format generation. */
+  sessionFormatVersion?: number
+  /** Last canonical event included in the accepted request. */
+  throughSeq: import('@deepseek-ai/dsh-session/types').SessionSeq
+}
+```
+
+Source: [`packages/session/session-sync-hub/src/types.ts:46`](../packages/session/session-sync-hub/src/types.ts)
 
 ### `step/*`
 
@@ -2506,6 +2527,14 @@ SHA-256: `47e5d84f1a93450a78c7f3954b43990d0f629af7c034a56313e5deb63e772c1b`
 SHA-256: `7f13860ee89a2d35ce09f958e85a04566cd59cb1de1d73a9619a9b631961dc71`
 
 `"session-reference"`
+
+<a id="persistence-type-sha256-fcfbf9ca97039b6e9bfacc806bc5523146618f3e1264e3600537d4e8a44539c7"></a>
+
+### `"session-sync-hub/delivery-accepted"`
+
+SHA-256: `fcfbf9ca97039b6e9bfacc806bc5523146618f3e1264e3600537d4e8a44539c7`
+
+`"session-sync-hub/delivery-accepted"`
 
 <a id="persistence-type-sha256-1c2686c0682e7bc51d61117b2652bd4a80707e331aa276d6ef915ae32534a330"></a>
 
@@ -7979,7 +8008,7 @@ Sources: [`packages/web/web-search-deepseek/src/provider.ts:64`](../packages/web
 
 SHA-256: `8bb8c3751a6ce64b61aba1ec7ae798c00a5803c4d868a0430873216c6569ed52`
 
-Sources: [`packages/session/session-log-deepseek/src/types.ts:81`](../packages/session/session-log-deepseek/src/types.ts)
+Sources: [`packages/session/session-log-deepseek/src/types.ts:81`](../packages/session/session-log-deepseek/src/types.ts) · [`packages/session/session-sync-hub/src/types.ts:46`](../packages/session/session-sync-hub/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8722,6 +8751,22 @@ SHA-256: `d63b8b8ffad9c02fd80c43a17df4f240c1fe8118ecca9de34f9d5871838ab5b9`
 | `seq` | required | `number` |
 | `time` | required | `number` |
 | `type` | required | `"session-log-deepseek/delivery-accepted"` |
+
+<a id="persistence-type-sha256-10508b7b5d59f30f162ee44d1429c1027bdf11aa628b1bae81d761a1326772c8"></a>
+
+<a id="persistence-type-eventsession-sync-hubdelivery-accepted"></a>
+
+### `{ type: "session-sync-hub/delivery-accepted" }`
+
+SHA-256: `10508b7b5d59f30f162ee44d1429c1027bdf11aa628b1bae81d761a1326772c8`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`{ sessionFormatVersion?, sessionId, throughSeq }`](#persistence-type-sha256-8bb8c3751a6ce64b61aba1ec7ae798c00a5803c4d868a0430873216c6569ed52) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"session-sync-hub/delivery-accepted"` |
 
 <a id="persistence-type-sha256-5e6db6e24948d4a853c71cb9fabd252ad051ce93d4672c1266cf837c1c17b84e"></a>
 

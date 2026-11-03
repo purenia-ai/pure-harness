@@ -9,8 +9,8 @@
   en: 1387c4505dde2faf
   zh: 48570fa1c13d6910
 /session-persistence-event-catalog/persistence-type-fingerprints:
-  en: 31c6dab0878b05a8
-  zh: 176d0f7cbdc3fce3
+  en: 285f6e0756479bf9
+  zh: d9300f649b68d398
 /session-persistence-event-catalog/event-envelope:
   en: 56414ffd00cdc32a
   zh: 6dc11eb013e95e41
@@ -194,6 +194,12 @@
 /session-persistence-event-catalog/events/session-log-deepseek/session-log-deepseek-delivery-accepted-log-only:
   en: 4e9ce9182ec05808
   zh: 7f643a6756ec8f76
+/session-persistence-event-catalog/events/session-sync-hub:
+  en: f9cf43dbd7529d43
+  zh: f9cf43dbd7529d43
+/session-persistence-event-catalog/events/session-sync-hub/session-sync-hub-delivery-accepted-log-only:
+  en: 72497558498b9ac4
+  zh: f965aa9d20e112c7
 /session-persistence-event-catalog/events/step:
   en: bd0dcbbc352b771a
   zh: bd0dcbbc352b771a
@@ -741,8 +747,11 @@
   en: 5e407647029b05dd
   zh: 5e407647029b05dd
 /session-persistence-event-catalog/resolved-persistence-types/session-reference:
-  en: 327b1b006be788bb
-  zh: 327b1b006be788bb
+  en: a62fb98b8a8a02ce
+  zh: a62fb98b8a8a02ce
+/session-persistence-event-catalog/resolved-persistence-types/session-sync-hub-delivery-accepted:
+  en: 62fbdfc37f2f354c
+  zh: 62fbdfc37f2f354c
 /session-persistence-event-catalog/resolved-persistence-types/session-end-seed:
   en: 11d7c85934440b31
   zh: 11d7c85934440b31
@@ -1932,8 +1941,8 @@
   en: 04b34b8ffe7e7764
   zh: a792d5371516fd9d
 /session-persistence-event-catalog/resolved-persistence-types/sessionformatversion-sessionid-throughseq:
-  en: 8aaa02b06896492d
-  zh: 4dd0e1ee40d8f22d
+  en: 88f980047e671df0
+  zh: 38ea02220ff6cf9b
 /session-persistence-event-catalog/resolved-persistence-types/shadowedrange-shadowedseqs-shadowedtokencount:
   en: 7a2ab7b62244f43b
   zh: 1084e3f8876feebc
@@ -2076,8 +2085,11 @@
   en: 40e813f93a0215de
   zh: d46d0f7e04e7323b
 /session-persistence-event-catalog/resolved-persistence-types/type-session-log-deepseek-delivery-accepted:
-  en: d4dbca005a27b78b
-  zh: b5792c3f38a6ba75
+  en: b8c3b45d0c44feca
+  zh: cbfd12bbfa1467e1
+/session-persistence-event-catalog/resolved-persistence-types/type-session-sync-hub-delivery-accepted:
+  en: c554b6520c4d1ab5
+  zh: e1f396b4527f0b5f
 /session-persistence-event-catalog/resolved-persistence-types/type-session-end-seed:
   en: acf7e21e4d21ebff
   zh: fb83a853634d204a

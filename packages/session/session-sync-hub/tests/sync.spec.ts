@@ -111,6 +111,8 @@ describe('session sync to the hub session-trace endpoint', () => {
     expect(payload?.meta?.ownerId).toBe('42')
     expect(payload?.meta?.formatVersion).toBe(session.header.version)
     expect(payload?.meta?.startedAt).toBe(new Date(session.header.createdAt).toISOString())
+    const markers = session.snapshotEvents().filter(event => event.type === 'session-sync-hub/delivery-accepted')
+    expect(markers.map(event => event.data.throughSeq)).toEqual([1])
   })
 
   it('keeps rows local while signed out and uploads them after sign-in', async () => {
