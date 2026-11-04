@@ -23,7 +23,7 @@ function stubFetch(answer: (call: Call) => Response = () => new Response('{"ok":
   const calls: Call[] = []
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
     const headers = init.headers as Record<string, string>
-    const call = { url, payload: JSON.parse(String(init.body)) as SyncPayload, authorization: headers.authorization ?? '' }
+    const call = { url, payload: JSON.parse(init.body as string) as SyncPayload, authorization: headers.authorization ?? '' }
     calls.push(call)
     return answer(call)
   }))

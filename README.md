@@ -88,9 +88,7 @@ PureHub Desktop does not transfer any information to networked systems beyond:
 - our backend (hub.puresnake.com) when you explicitly sign in with an account,
 - plugin downloads from the marketplace when you explicitly choose to install one.
 
-No telemetry is collected or transmitted by the application itself. Commands you
-run and files you work on stay on your machine unless you explicitly send them
-to a model provider you configure.
+No telemetry is collected or transmitted by the application itself. Commands you run and files you work on stay on your machine unless you explicitly send them to a model provider you configure.
 
 ## License
 

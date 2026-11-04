@@ -95,9 +95,7 @@ export function resolveAccountOptions(options: AccountOptions, environment?: Lau
   const {
     authScheme = 'x-dsh-auth-token', modelsTimeoutMs: _timeout, modelsMaxAgeMs: _maxAge, modelOverrides = {}, ...protocolOptions
   } = options
-  if (authScheme !== 'x-dsh-auth-token' && authScheme !== 'bearer') {
-    throw new Error('llm-deepseek-account: authScheme must be x-dsh-auth-token or bearer')
-  }
+
   const timing = resolveListingTiming(options, 'llm-deepseek-account')
   const protocol = resolveAdapterOptions(protocolOptions, environment)
   return {

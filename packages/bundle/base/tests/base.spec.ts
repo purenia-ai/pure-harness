@@ -41,8 +41,12 @@ describe('dsh-base bundle', () => {
     })
     expect(rows.filter(row => row.id === 'subagent-codex')).toHaveLength(0)
     expect(rows.filter(row => row.id === 'subagent-claude-code')).toHaveLength(0)
-    expect(rows.find(row => row.id === 'web')?.config).toMatchObject({ fetchProvider: 'http' })
+    expect(rows.find(row => row.id === 'web')?.config).toEqual({ searchProvider: 'deepseek-search-api', fetchProvider: 'http' })
+    expect(rows.find(row => row.id === 'web-deepseek-api')).toEqual({ id: 'web-deepseek-api', name: '@deepseek-ai/dsh-web-deepseek-api' })
     expect(rows.find(row => row.id === 'web-fetch-http')).toBeDefined()
+    expect(rows.find(row => row.id === 'web-search-deepseek')).toMatchObject({
+      name: '@deepseek-ai/dsh-web-search-deepseek', config: { apiKeyEnv: 'DEEPSEEK_API_KEY' },
+    })
     expect(rows.find(row => row.id === 'tool-web')?.config).toMatchObject({ fetch: true })
     expect(rows.find(row => row.id === 'llm-deepseek-account-purehub')?.config).toMatchObject({
       baseURL: 'https://hub.puresnake.com/v1', authScheme: 'bearer', maxTokens: 131072,
@@ -66,9 +70,12 @@ describe('dsh-base bundle', () => {
     expect(rows.find(row => row.id === 'agent-default-model')?.config).toMatchObject({
       provider: 'deepseek-account', model: 'deepseek-flash',
     })
-    expect(rows.find(row => row.id === 'llm-pi-ai-account')?.config).toMatchObject({
-      providers: { 'purehub-openai': { models: expect.arrayContaining([{ id: 'gpt-6.1-sol', input: ['text', 'image'] }]) } },
-    })
+    const piAiProviders = (rows.find(row => row.id === 'llm-pi-ai-account')?.config as {
+      providers: Record<string, { models: { id: string; input?: string[] }[] }>
+    }).providers
+    expect(piAiProviders['purehub-openai']?.models).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'gpt-6.1-sol', input: ['text', 'image'] }),
+    ]))
     // The fork ships its own plugin market built in: the hub index preconfigured, with account
     // authentication for index reads (plugin-market) and package installs (plugin-manager).
     expect(rows.find(row => row.id === 'plugin-market')?.config).toMatchObject({
@@ -82,6 +89,8 @@ describe('dsh-base bundle', () => {
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')
+    expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-deepseek-api')
+    expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-search-deepseek')
   })
 
   it('gates each shell stack by platform with a symmetric disabled expression', () => {

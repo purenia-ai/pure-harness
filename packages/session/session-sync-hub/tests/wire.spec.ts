@@ -103,7 +103,7 @@ describe('session sync over HTTP', () => {
     let signedIn = false
     const hub = await startHub(() => signedIn
       ? { status: 200, body: '{"ok":true}' }
-      : { status: 302, body: '', location: `${'http://127.0.0.1'}/login` })
+      : { status: 302, body: '', location: 'http://127.0.0.1/login' })
     const { session } = await harness(hub.url)
     appendUser(session, 'before sign-in')
     await settle()

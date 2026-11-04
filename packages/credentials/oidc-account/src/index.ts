@@ -322,7 +322,7 @@ export class OidcAccount extends DeepSeekAccount {
         { ...this.requestHeaders, ...platformClientHeaders(this.platform, client) })
       if (this.detailsLifetime !== lifetime) return null
       const result: AccountDetails['profile'] = { status: 'ready', value: this.profileOf(claims) }
-      this.cacheProfile(stored.token, result as Extract<AccountDetails['profile'], { status: 'ready' }>)
+      this.cacheProfile(stored.token, result)
       return result
     } catch (error) {
       if (error instanceof AccountUnauthorizedError) {
@@ -344,8 +344,8 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   /** A generic SSO has no bonus orders; nothing is ever displayed. */
-  override async getUnnotifiedBonuses(_client: AccountClientMetadata): Promise<AccountBonusBatch | null> {
-    return null
+  override getUnnotifiedBonuses(_client: AccountClientMetadata): Promise<AccountBonusBatch | null> {
+    return Promise.resolve(null)
   }
 
   /** A generic SSO has no bonus orders; acknowledgements never apply. */
@@ -528,6 +528,7 @@ export class OidcAccount extends DeepSeekAccount {
     if (previous !== undefined) {
       await previous.done
       // Disposal can close the provider while the previous attempt settles.
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- TS narrows this.closed across the await; disposal still sets it.
       if (this.closed) throw new OidcAuthError('protocol')
       if (this.attempt !== previous) return this.getState()
     }
@@ -627,7 +628,7 @@ export class OidcAccount extends DeepSeekAccount {
       if (retry > 0) {
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, this.logoutRetryDelayMs * 2 ** (retry - 1))
-          timer.unref?.()
+          timer.unref()
         })
       }
       if (this.logoutLifetime.signal.aborted) return

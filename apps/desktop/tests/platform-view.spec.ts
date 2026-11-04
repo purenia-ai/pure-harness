@@ -111,10 +111,10 @@ it('trades the account token for a page session before the first document reques
   state.exchangeCookies = [{ name: 'SESSION', value: 'stored' }]
   await manager.open(owner, 'usage', bounds)
   const browserSession = state.sessions.at(-1) as { fetch: ReturnType<typeof vi.fn>; cookies: { get: ReturnType<typeof vi.fn> } }
-  expect(browserSession.fetch).toHaveBeenCalledWith('https://platform.deepseek.com/oauth2/session', {
+  expect(browserSession.fetch).toHaveBeenCalledWith('https://platform.deepseek.com/oauth2/session', expect.objectContaining({
     method: 'POST', credentials: 'include', headers: { authorization: 'Bearer fixture-secret' },
-    signal: expect.any(AbortSignal),
-  })
+  }))
+  expect((browserSession.fetch.mock.calls[0]?.[1] as { signal?: unknown } | undefined)?.signal).toBeInstanceOf(AbortSignal)
   expect(browserSession.cookies.get).toHaveBeenCalledWith({ url: 'https://platform.deepseek.com' })
   // The session cookie must exist before the document request, otherwise the page renders its login form.
   expect(browserSession.fetch.mock.invocationCallOrder[0]).toBeLessThan(view().webContents.loadURL.mock.invocationCallOrder[0]!)

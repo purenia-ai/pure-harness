@@ -87,8 +87,8 @@ export function apply(ctx: Context, config: Config): void {
   const profiles = (): ReadonlyMap<string, ResolvedPiAiProviderProfile> => {
     const raw = isVolatile(config.providers) ? config.providers.get() : config.providers
     if (raw === lastRaw && memoized !== undefined) return memoized
-    const next = resolveProfiles(structuredClone(raw ?? {}) as Options['providers'], 'deferred')
-    lastRaw = raw as Record<string, unknown>
+    const next = resolveProfiles(structuredClone(raw) as Options['providers'], 'deferred')
+    lastRaw = raw
     memoized = next
     return next
   }

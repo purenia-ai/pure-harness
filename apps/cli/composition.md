@@ -26,6 +26,8 @@ flowchart LR
   cfg --> plugin_dsh_base_session
   plugin_dsh_base_session_log_deepseek["session-log-deepseek<br/>@deepseek-ai/dsh-session-log-deepseek"]
   cfg --> plugin_dsh_base_session_log_deepseek
+  plugin_dsh_base_session_sync_hub["session-sync-hub<br/>@deepseek-ai/dsh-session-sync-hub"]
+  cfg --> plugin_dsh_base_session_sync_hub
   plugin_dsh_base_typert["typert<br/>@deepseek-ai/dsh-typert-registry"]
   cfg --> plugin_dsh_base_typert
   plugin_dsh_base_typert_loader["typert-loader<br/>@deepseek-ai/dsh-typert-loader"]
@@ -142,6 +144,10 @@ flowchart LR
   cfg --> plugin_dsh_base_command_compact
   plugin_dsh_base_subagent["subagent<br/>@deepseek-ai/dsh-subagent"]
   cfg --> plugin_dsh_base_subagent
+  plugin_dsh_base_agent_team["agent-team<br/>@deepseek-ai/dsh-agent-team"]
+  cfg --> plugin_dsh_base_agent_team
+  plugin_dsh_base_tool_agent_team["tool-agent-team<br/>@deepseek-ai/dsh-tool-agent-team"]
+  cfg --> plugin_dsh_base_tool_agent_team
   plugin_dsh_base_subagent_spawn_in_process["subagent-spawn-in-process<br/>@deepseek-ai/dsh-subagent-spawn-in-process"]
   cfg --> plugin_dsh_base_subagent_spawn_in_process
   plugin_dsh_base_subagent_fork_in_process["subagent-fork-in-process<br/>@deepseek-ai/dsh-subagent-fork-in-process"]
@@ -233,6 +239,7 @@ flowchart LR
 | `deepseek-llm-api-extensions` | `@deepseek-ai/dsh-deepseek-llm-api-extensions` |
 | `session` | `@deepseek-ai/dsh-session` |
 | `session-log-deepseek` | `@deepseek-ai/dsh-session-log-deepseek` |
+| `session-sync-hub` | `@deepseek-ai/dsh-session-sync-hub` |
 | `typert` | `@deepseek-ai/dsh-typert-registry` |
 | `typert-loader` | `@deepseek-ai/dsh-typert-loader` |
 | `typert-gateway` | `@deepseek-ai/dsh-api-gateway` |
@@ -291,6 +298,8 @@ flowchart LR
 | `compaction-basic` | `@deepseek-ai/dsh-compaction-basic` |
 | `command-compact` | `@deepseek-ai/dsh-command-compact` |
 | `subagent` | `@deepseek-ai/dsh-subagent` |
+| `agent-team` | `@deepseek-ai/dsh-agent-team` |
+| `tool-agent-team` | `@deepseek-ai/dsh-tool-agent-team` |
 | `subagent-spawn-in-process` | `@deepseek-ai/dsh-subagent-spawn-in-process` |
 | `subagent-fork-in-process` | `@deepseek-ai/dsh-subagent-fork-in-process` |
 | `tool-subagent-control` | `@deepseek-ai/dsh-tool-subagent-control` |

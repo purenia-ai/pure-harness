@@ -125,6 +125,7 @@ export function acceptedThrough(session: Session): number {
   const start = previous?.events ?? 0
   const length = session.seq
   for (let index = start; index < length; index++) {
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing watermark read; migrating this sync path to a projection is pending.
     const event = session.eventAt(SessionSeq(index))
     if (event === undefined) continue
     if (event.type !== 'session-sync-hub/delivery-accepted') continue
@@ -336,7 +337,7 @@ export function apply(ctx: Context, config: Config): void {
           sent += batch.length
           if (last !== undefined) {
             appendAccepted(session, last.seq)
-            recordedSeq = Number(last.seq)
+            recordedSeq = last.seq
           }
           state.attempts = 0
         }
