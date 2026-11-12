@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-session-sync-hub",
   "description": "Incremental session upload to a PureHub session-trace endpoint",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },

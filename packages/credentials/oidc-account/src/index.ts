@@ -7,7 +7,9 @@ import { promises as streamPromises } from 'node:stream'
 import { Context, Service } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
 import { z } from 'zod'
-import { DeepSeekAccount, installAccountTaskCancellation, platformClientHeaders, platformWireLocale, type AccountBonusBatch, type AccountBonusOrderId, type AccountClientMetadata, type AccountDetails, type AccountProfile, type AccountUserId, type AccountView, type PlatformSession, type SignInAttemptId, type SignInAttemptView } from '@deepseek-ai/dsh-deepseek-account'
+import { DeepSeekAccount, type AccountClientMetadata, type AccountDetails, type AccountProfile, type AccountUserId, type AccountUpdate, type AccountView, type PlatformSession, type SignInAttemptId, type SignInAttemptView } from '@deepseek-ai/dsh-deepseek-account'
+import { installAccountTaskCancellation } from '@deepseek-ai/dsh-deepseek-account/src/account-tasks.ts'
+import { platformClientHeaders, platformWireLocale } from '@deepseek-ai/dsh-deepseek-account/client-metadata'
 import { credentialKey } from '@deepseek-ai/dsh-credentials'
 import type { AuthorizationSession } from '@deepseek-ai/dsh-authorization'
 import { AccountUnauthorizedError, OidcAuthError, buildAuthorizeUrl, deploymentHeaders, fetchUserInfo, loginOrigin, oidcOrigin, resolveEndpoints, revokeToken, tokenRequest, type ClientAuth, type OidcEndpoints } from './oidc.ts'
@@ -172,10 +174,14 @@ function sameOriginUrl(link: string, issuer: string): string | undefined {
 
 /** The OIDC implementation owns login state and its opaque stored grant. */
 export class OidcAccount extends DeepSeekAccount {
-  static inject = ['credentials', 'authorization']
-  static Config = Config
+  static override inject = ['credentials', 'authorization']
+  /**
+   * rc.2's base declares the Platform schema on the class. This implementation replaces it with the
+   * OIDC schema above; the assertion is type-only and the Loader validates against this value.
+   */
+  static override Config = Config as unknown as typeof DeepSeekAccount.Config
   private readonly issuer: string
-  private readonly inferenceOrigin: string
+  private readonly oidcInferenceOrigin: string
   private readonly displayName: string
   private readonly configuredEndpoints: { authorization: string; token: string; userinfo: string; revocation: string; endSession: string }
   private readonly discovery: boolean
@@ -187,27 +193,27 @@ export class OidcAccount extends DeepSeekAccount {
   private readonly embeddedPages: { usage: string | undefined; topUp: string | undefined }
   private readonly sessionExchangeUrl: string | undefined
   private readonly claims: { id: string; name: string; contact: string; avatar: string }
-  private readonly platform: 'darwin' | 'win32' | null
-  private readonly requestHeaders: Record<string, string>
-  private readonly requestTimeout: number
-  private readonly attemptTimeout: number
+  private readonly oidcPlatform: 'darwin' | 'win32' | null
+  private readonly oidcRequestHeaders: Record<string, string>
+  private readonly oidcRequestTimeout: number
+  private readonly oidcAttemptTimeout: number
   private readonly refreshMargin: number
   private readonly logoutMaxRetries: number
   private readonly logoutRetryDelayMs: number
-  private readonly logoutLifetime = new AbortController()
-  private readonly revocations = new Set<Promise<void>>()
+  private readonly oidcLogoutLifetime = new AbortController()
+  private readonly oidcRevocations = new Set<Promise<void>>()
   private endpointsPromise: Promise<OidcEndpoints> | undefined
   private refreshing: Promise<Grant | null> | undefined
-  private attempt: Attempt | undefined
-  private readonly listeners = new Set<() => void>()
+  private oidcAttempt: Attempt | undefined
+  private readonly oidcListeners = new Set<() => void>()
   /**
    * Latest ready profile read and the grant token it was read with. Binding the token keeps a
    * cached identity from answering for a credential that has since changed.
    */
-  private lastProfile: { readonly token: string; readonly profile: Extract<AccountDetails['profile'], { status: 'ready' }> } | undefined
-  private detailsLifetime = new AbortController()
-  private closed = false
-  private removing: Promise<AccountView> | undefined
+  private oidcLastProfile: { readonly token: string; readonly profile: Extract<AccountDetails['profile'], { status: 'ready' }> } | undefined
+  private oidcDetailsLifetime = new AbortController()
+  private oidcClosed = false
+  private oidcRemoving: Promise<AccountView> | undefined
 
   /** @param ctx - Host with authorization and credentials services. @param config - deployment options. */
   constructor(ctx: Context, config: Config = {}) {
@@ -220,7 +226,7 @@ export class OidcAccount extends DeepSeekAccount {
       || inference.pathname !== '/' || inference.search || inference.hash) {
       throw new Error('oidc-account: inferenceOrigin must be an HTTP(S) origin without credentials, path, query or fragment')
     }
-    this.inferenceOrigin = inference.origin
+    this.oidcInferenceOrigin = inference.origin
     this.displayName = resolved.displayName
     this.configuredEndpoints = {
       authorization: resolved.authorizationEndpoint, token: resolved.tokenEndpoint,
@@ -243,43 +249,43 @@ export class OidcAccount extends DeepSeekAccount {
       topUp: sameOriginUrl(this.links.topUpUrl, this.issuer),
     }
     this.claims = { id: resolved.claimId, name: resolved.claimName, contact: resolved.claimContact, avatar: resolved.claimAvatar }
-    this.platform = resolved.desktopPlatform
-    this.requestHeaders = deploymentHeaders(resolved.requestHeaders)
-    this.requestTimeout = resolved.requestTimeoutMs
-    this.attemptTimeout = resolved.attemptTimeoutMs
+    this.oidcPlatform = resolved.desktopPlatform
+    this.oidcRequestHeaders = deploymentHeaders(resolved.requestHeaders)
+    this.oidcRequestTimeout = resolved.requestTimeoutMs
+    this.oidcAttemptTimeout = resolved.attemptTimeoutMs
     this.refreshMargin = resolved.refreshMarginMs
     this.logoutMaxRetries = resolved.logoutMaxRetries
     this.logoutRetryDelayMs = resolved.logoutRetryDelayMs
     ctx.authorization.registerFlow({
       key: KEY, label: this.displayName, methods: [{ id: 'browser', label: this.displayName }],
       run: (session) => {
-        const attempt = this.attempt
+        const attempt = this.oidcAttempt
         if (attempt === undefined) return Promise.reject(new OidcAuthError('protocol'))
-        attempt.running = this.run(session, attempt)
+        attempt.running = this.oidcRun(session, attempt)
         return attempt.running
       },
     })
     ctx.on('credentials/record-updated', (key) => {
       if (key !== KEY) return
-      this.invalidateDetails()
-      this.changed()
+      this.oidcInvalidateDetails()
+      this.oidcChanged()
     })
     ctx.effect(() => async () => {
-      this.closed = true
-      this.logoutLifetime.abort()
-      this.invalidateDetails()
-      const active = this.attempt
+      this.oidcClosed = true
+      this.oidcLogoutLifetime.abort()
+      this.oidcInvalidateDetails()
+      const active = this.oidcAttempt
       if (active !== undefined) {
         if (active.view.phase !== 'committing') active.controller.abort()
         await active.done
       }
-      await this.removing
-      await Promise.all(this.revocations)
-      this.changed()
+      await this.oidcRemoving
+      await Promise.all(this.oidcRevocations)
+      this.oidcChanged()
     }, 'oidc-account: active attempt lifetime')
   }
 
-  async [Service.init](): Promise<void> {
+  override async [Service.init](): Promise<void> {
     const record = await this.ctx.credentials.readRecord(KEY)
     if (record === undefined) return
     if (record.kind !== 'grant') throw new OidcAuthError('storage')
@@ -295,7 +301,7 @@ export class OidcAccount extends DeepSeekAccount {
     if (record !== undefined && (record.kind !== 'grant' || !grant.safeParse(record.payload).success)) {
       throw new OidcAuthError('storage')
     }
-    const attempt = this.attempt?.view ?? null
+    const attempt = this.oidcAttempt?.view ?? null
     return {
       status: record === undefined ? 'signed-out' : 'credential-stored',
       // Credential removal can notify watchers before sign-out finishes clearing the attempt.
@@ -305,76 +311,73 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   override async getProfile(client: AccountClientMetadata): Promise<AccountDetails['profile'] | null> {
-    const lifetime = this.detailsLifetime
+    const lifetime = this.oidcDetailsLifetime
     const stored = await this.usableGrant(lifetime)
     if (stored === null || lifetime.signal.aborted) return null
-    if (this.attempt?.initialProfile?.token === stored.token) {
-      const initial = this.attempt.initialProfile.value
-      delete this.attempt.initialProfile
-      this.cacheProfile(stored.token, initial as Extract<AccountDetails['profile'], { status: 'ready' }>)
+    if (this.oidcAttempt?.initialProfile?.token === stored.token) {
+      const initial = this.oidcAttempt.initialProfile.value
+      delete this.oidcAttempt.initialProfile
+      this.oidcCacheProfile(stored.token, initial as Extract<AccountDetails['profile'], { status: 'ready' }>)
       return initial
     }
     const endpoints = await this.endpoints()
     if (endpoints.userinfo === undefined) return { status: 'failed' }
     try {
       const claims = await fetchUserInfo(endpoints.userinfo, stored.token,
-        AbortSignal.any([lifetime.signal, AbortSignal.timeout(this.requestTimeout)]),
-        { ...this.requestHeaders, ...platformClientHeaders(this.platform, client) })
-      if (this.detailsLifetime !== lifetime) return null
+        AbortSignal.any([lifetime.signal, AbortSignal.timeout(this.oidcRequestTimeout)]),
+        { ...this.oidcRequestHeaders, ...platformClientHeaders(this.oidcPlatform, client) })
+      if (this.oidcDetailsLifetime !== lifetime) return null
       const result: AccountDetails['profile'] = { status: 'ready', value: this.profileOf(claims) }
-      this.cacheProfile(stored.token, result)
+      this.oidcCacheProfile(stored.token, result)
       return result
     } catch (error) {
       if (error instanceof AccountUnauthorizedError) {
-        if (this.detailsLifetime === lifetime) await this.expireCredential(stored.token, lifetime)
+        if (this.oidcDetailsLifetime === lifetime) await this.oidcExpireCredential(stored.token, lifetime)
         return null
       }
-      if (this.detailsLifetime !== lifetime) return null
+      if (this.oidcDetailsLifetime !== lifetime) return null
       // Only this same grant's last ready read may stand in for a failed refresh.
-      const cached = this.lastProfile?.token === stored.token ? this.lastProfile.profile : undefined
+      const cached = this.oidcLastProfile?.token === stored.token ? this.oidcLastProfile.profile : undefined
       return cached ?? { status: 'failed' }
     }
   }
 
   /** A generic SSO has no wallet ledger; the balance card renders its unavailable state. */
   override async getBalance(_client: AccountClientMetadata): Promise<AccountDetails['balance'] | null> {
-    const stored = await this.usableGrant(this.detailsLifetime)
+    const stored = await this.usableGrant(this.oidcDetailsLifetime)
     if (stored === null) return null
     return { status: 'failed' }
   }
 
   /** A generic SSO has no bonus orders; nothing is ever displayed. */
-  override getUnnotifiedBonuses(_client: AccountClientMetadata): Promise<AccountBonusBatch | null> {
+
+  /** A generic SSO ships no notification inbox; every read stays empty. */
+  override getNotifications(_client: AccountClientMetadata): Promise<null> {
     return Promise.resolve(null)
   }
 
-  /** A generic SSO has no bonus orders; acknowledgements never apply. */
-  override ackBonusNotified(_accountId: AccountUserId, _orderId: AccountBonusOrderId, _client: AccountClientMetadata): Promise<boolean> {
-    return Promise.resolve(false)
-  }
-
   override async rejectToken(token: string): Promise<void> {
-    const lifetime = this.detailsLifetime
-    const stored = await this.readCurrentGrant(lifetime)
-    if (stored?.token !== token || this.detailsLifetime !== lifetime) return
-    await this.expireCredential(token, lifetime)
+    const lifetime = this.oidcDetailsLifetime
+    const stored = await this.oidcReadCurrentGrant(lifetime)
+    if (stored?.token !== token || this.oidcDetailsLifetime !== lifetime) return
+    await this.oidcExpireCredential(token, lifetime)
   }
 
-  private async expireCredential(token: string, lifetime: AbortController): Promise<void> {
-    this.removing ??= (async () => {
-      if (this.attempt !== undefined) await this.cancelSignIn(this.attempt.view.id)
+  private async oidcExpireCredential(token: string, lifetime: AbortController): Promise<void> {
+    this.oidcRemoving ??= (async () => {
+      if (this.oidcAttempt !== undefined) await this.cancelSignIn(this.oidcAttempt.view.id)
       const record = await this.ctx.credentials.readRecord(KEY)
-      if (this.closed || this.detailsLifetime !== lifetime || record?.kind !== 'grant') return this.getState()
+      if (this.oidcClosed || this.oidcDetailsLifetime !== lifetime || record?.kind !== 'grant') return this.getState()
       const current = grant.parse(record.payload)
       if (current.token !== token || current.issuer !== this.issuer) return this.getState()
       await this.ctx.credentials.deleteRecord(KEY)
       this.ctx.emit('deepseek-account/session-expired')
-      this.attempt = undefined
+      this.oidcAttempt = undefined
       this.ctx.emit('deepseek-account/signed-out')
-      this.changed()
+      this.oidcChanged()
       return this.getState()
-    })().finally(() => { this.removing = undefined })
-    await this.removing
+    })().finally(() => { this.oidcRemoving = undefined })
+    await this.oidcRemoving
   }
 
   override async getDeviceIdentity(): Promise<{ deviceId?: string; userId?: AccountUserId; osVersion: string }> {
@@ -391,23 +394,23 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   override async getPlatformSession(): Promise<PlatformSession | null> {
-    const lifetime = this.detailsLifetime
+    const lifetime = this.oidcDetailsLifetime
     const stored = await this.usableGrant(lifetime)
     if (stored === null || lifetime.signal.aborted) return null
     // Identity comes from the profile read for this same grant; an unknown ID requires disposable
     // browser storage. A replaced credential never publishes the account its predecessor named.
     return {
       origin: this.issuer, token: stored.token,
-      userId: this.lastProfile?.token === stored.token ? this.lastProfile.profile.value.id || null : null,
-      requestHeaders: { ...this.requestHeaders },
+      userId: this.oidcLastProfile?.token === stored.token ? this.oidcLastProfile.profile.value.id || null : null,
+      requestHeaders: { ...this.oidcRequestHeaders },
       ...(this.sessionExchangeUrl === undefined ? {} : { sessionExchangeUrl: this.sessionExchangeUrl }),
       ...(this.embeddedPages.usage === undefined ? {} : { usageUrl: this.embeddedPages.usage }),
       ...(this.embeddedPages.topUp === undefined ? {} : { topUpUrl: this.embeddedPages.topUp }),
     }
   }
 
-  private async readCurrentGrant(lifetime: AbortController): Promise<Grant | null> {
-    if (this.closed) return null
+  private async oidcReadCurrentGrant(lifetime: AbortController): Promise<Grant | null> {
+    if (this.oidcClosed) return null
     const record = await this.ctx.credentials.readRecord(KEY)
     if (record === undefined || lifetime.signal.aborted) return null
     if (record.kind !== 'grant') throw new OidcAuthError('storage')
@@ -430,7 +433,7 @@ export class OidcAccount extends DeepSeekAccount {
   /** Cached endpoint resolution; configuration is fixed for the provider lifetime. */
   private endpoints(): Promise<OidcEndpoints> {
     this.endpointsPromise ??= resolveEndpoints(this.issuer, this.configuredEndpoints, this.discovery,
-      this.allowLoopbackHttp, AbortSignal.timeout(this.requestTimeout), this.requestHeaders)
+      this.allowLoopbackHttp, AbortSignal.timeout(this.oidcRequestTimeout), this.oidcRequestHeaders)
     return this.endpointsPromise
   }
 
@@ -442,7 +445,7 @@ export class OidcAccount extends DeepSeekAccount {
    * @returns a usable grant, or null while signed out or unable to refresh an expired grant.
    */
   private async usableGrant(lifetime: AbortController): Promise<Grant | null> {
-    const stored = await this.readCurrentGrant(lifetime)
+    const stored = await this.oidcReadCurrentGrant(lifetime)
     if (stored === null) return null
     if (!this.needsRefresh(stored)) return stored
     this.refreshing ??= this.doRefresh(stored).finally(() => { this.refreshing = undefined })
@@ -453,7 +456,7 @@ export class OidcAccount extends DeepSeekAccount {
     if (stored.refreshToken === undefined) {
       // Without a refresh token an expired grant can only be signed in again.
       if (this.isExpired(stored)) {
-        await this.expireCredential(stored.token, this.detailsLifetime)
+        await this.oidcExpireCredential(stored.token, this.oidcDetailsLifetime)
         return null
       }
       return stored
@@ -468,7 +471,8 @@ export class OidcAccount extends DeepSeekAccount {
         if (!this.needsRefresh(parsed.data)) return undefined
         const tokens = await tokenRequest(resolved.token, {
           grant_type: 'refresh_token', refresh_token: parsed.data.refreshToken ?? '',
-        }, this.clientAuth, AbortSignal.any([this.logoutLifetime.signal, AbortSignal.timeout(this.requestTimeout)]), this.requestHeaders)
+        }, this.clientAuth,
+        AbortSignal.any([this.oidcLogoutLifetime.signal, AbortSignal.timeout(this.oidcRequestTimeout)]), this.oidcRequestHeaders)
         return {
           kind: 'grant' as const,
           payload: {
@@ -489,7 +493,7 @@ export class OidcAccount extends DeepSeekAccount {
       return parsed.data
     } catch (error) {
       if (error instanceof AccountUnauthorizedError) {
-        await this.expireCredential(stored.token, this.detailsLifetime)
+        await this.oidcExpireCredential(stored.token, this.oidcDetailsLifetime)
         return null
       }
       console.info('[oidc-account] token refresh failed', {
@@ -501,16 +505,16 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   override async resolveToken(url: string): Promise<string | undefined> {
-    if (this.closed || this.removing !== undefined) return undefined
+    if (this.oidcClosed || this.oidcRemoving !== undefined) return undefined
     const destination = new URL(url)
-    if (destination.origin !== this.inferenceOrigin || destination.username || destination.password) return undefined
-    const stored = await this.readCurrentGrant(this.detailsLifetime)
+    if (destination.origin !== this.oidcInferenceOrigin || destination.username || destination.password) return undefined
+    const stored = await this.oidcReadCurrentGrant(this.oidcDetailsLifetime)
     if (stored === null) return undefined
     // Development grants never authenticate model or file requests.
     if (stored.token.startsWith('dsh_mock_')) return undefined
     if (new URL(stored.issuer).origin !== this.issuer) return undefined
     if (this.needsRefresh(stored)) {
-      const refreshed = await this.usableGrant(this.detailsLifetime)
+      const refreshed = await this.usableGrant(this.oidcDetailsLifetime)
       if (refreshed === null || refreshed.token.startsWith('dsh_mock_')) return undefined
       return refreshed.token
     }
@@ -518,40 +522,40 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   override async startSignIn(client: AccountClientMetadata, callbackOrigin: string, loginSource: 'web' | 'desktop'): Promise<AccountView> {
-    if (this.removing !== undefined) await this.removing
+    if (this.oidcRemoving !== undefined) await this.oidcRemoving
     const origin = loginOrigin(callbackOrigin)
-    if (this.closed) throw new OidcAuthError('protocol')
-    if (this.attempt !== undefined && ['initializing', 'waiting-browser', 'exchanging', 'committing'].includes(this.attempt.view.phase)) {
+    if (this.oidcClosed) throw new OidcAuthError('protocol')
+    if (this.oidcAttempt !== undefined && ['initializing', 'waiting-browser', 'exchanging', 'committing'].includes(this.oidcAttempt.view.phase)) {
       return this.getState()
     }
-    const previous = this.attempt
+    const previous = this.oidcAttempt
     if (previous !== undefined) {
       await previous.done
       // Disposal can close the provider while the previous attempt settles.
-      // oxlint-disable-next-line typescript/no-unnecessary-condition -- TS narrows this.closed across the await; disposal still sets it.
-      if (this.closed) throw new OidcAuthError('protocol')
-      if (this.attempt !== previous) return this.getState()
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- TS narrows oidcClosed across the await; disposal sets it.
+      if (this.oidcClosed) throw new OidcAuthError('protocol')
+      if (this.oidcAttempt !== previous) return this.getState()
     }
     const attempt: Attempt = {
       origin, loginSource,
       locale: platformWireLocale(client.locale),
-      clientHeaders: platformClientHeaders(this.platform, client),
+      clientHeaders: platformClientHeaders(this.oidcPlatform, client),
       view: { id: randomUUID() as SignInAttemptId, phase: 'initializing' },
       controller: new AbortController(), done: Promise.resolve(), running: Promise.resolve(),
     }
-    this.attempt = attempt
+    this.oidcAttempt = attempt
     attempt.done = this.ctx.authorization.begin({
       key: KEY, signal: attempt.controller.signal,
       interaction: { notify: () => undefined, prompt: () => Promise.reject(new OidcAuthError('protocol')) },
     }).then((outcome) => {
-      this.update(attempt, { phase: outcome.status === 'authorized' ? 'succeeded' : 'cancelled' })
+      this.oidcUpdate(attempt, { phase: outcome.status === 'authorized' ? 'succeeded' : 'cancelled' })
       if (outcome.status === 'authorized') this.finishSucceededCallback(attempt)
       else attempt.callback?.writeHead(204, { 'cache-control': 'no-store' }).end()
     }).catch((error: unknown) => {
       const code = error instanceof OidcAuthError ? error.code : 'protocol'
       console.info('[oidc-account] sign-in failed', { errorCode: code })
-      this.update(attempt, { phase: code === 'expired' ? 'expired' : 'failed', errorCode: code })
-      this.finishFailedCallback(attempt)
+      this.oidcUpdate(attempt, { phase: code === 'expired' ? 'expired' : 'failed', errorCode: code })
+      this.oidcFinishFailedCallback(attempt)
     }).then(async () => {
       // begin() may report cancellation before the HTTP work observes its signal.
       await attempt.running.catch(() => undefined)
@@ -560,12 +564,12 @@ export class OidcAccount extends DeepSeekAccount {
       }
       await attempt.disposeCallback?.()
     })
-    this.changed()
+    this.oidcChanged()
     return this.getState()
   }
 
   override async cancelSignIn(id: SignInAttemptId): Promise<AccountView> {
-    const attempt = this.attempt
+    const attempt = this.oidcAttempt
     if (attempt?.view.id === id) {
       if (attempt.view.phase !== 'committing') {
         attempt.controller.abort()
@@ -577,9 +581,9 @@ export class OidcAccount extends DeepSeekAccount {
   }
 
   override signOut(client: AccountClientMetadata): Promise<AccountView> {
-    this.removing ??= (async () => {
-      if (this.closed) throw new OidcAuthError('protocol')
-      if (this.attempt !== undefined) await this.cancelSignIn(this.attempt.view.id)
+    this.oidcRemoving ??= (async () => {
+      if (this.oidcClosed) throw new OidcAuthError('protocol')
+      if (this.oidcAttempt !== undefined) await this.cancelSignIn(this.oidcAttempt.view.id)
       const record = await this.ctx.credentials.readRecord(KEY)
       if (record !== undefined) {
         if (record.kind !== 'grant') throw new OidcAuthError('storage')
@@ -587,38 +591,38 @@ export class OidcAccount extends DeepSeekAccount {
         if (!parsed.success) throw new OidcAuthError('storage')
         if (parsed.data.issuer !== this.issuer) throw new OidcAuthError('protocol')
         await this.ctx.credentials.deleteRecord(KEY)
-        this.revoke(parsed.data.token, platformClientHeaders(this.platform, client))
+        this.oidcRevoke(parsed.data.token, platformClientHeaders(this.oidcPlatform, client))
       }
-      this.attempt = undefined
+      this.oidcAttempt = undefined
       this.ctx.emit('deepseek-account/signed-out')
-      this.changed()
+      this.oidcChanged()
       return this.getState()
-    })().finally(() => { this.removing = undefined })
-    return this.removing
+    })().finally(() => { this.oidcRemoving = undefined })
+    return this.oidcRemoving
   }
 
-  override async *watch(signal: AbortSignal): AsyncIterable<AccountView> {
+  override async *watch(signal: AbortSignal, _includeIdentityChanges = false): AsyncIterable<AccountUpdate> {
     let dirty = true
     let wake: (() => void) | undefined
     const changed = (): void => { dirty = true; wake?.() }
-    this.listeners.add(changed)
+    this.oidcListeners.add(changed)
     signal.addEventListener('abort', changed, { once: true })
     try {
-      while (!this.closed && !signal.aborted) {
-        if (dirty) { dirty = false; yield await this.getState(); continue }
+      while (!this.oidcClosed && !signal.aborted) {
+        if (dirty) { dirty = false; yield { type: 'snapshot', state: await this.getState() }; continue }
         await new Promise<void>((resolve) => { wake = resolve })
       }
     } finally {
-      this.listeners.delete(changed)
+      this.oidcListeners.delete(changed)
       signal.removeEventListener('abort', changed)
     }
   }
 
   /** Background revocation with capped exponential backoff; failures never restore the grant. */
-  private revoke(token: string, headers: Record<string, string>): void {
-    if (this.closed) return
-    const revocation = this.revokeWithRetry(token, headers).finally(() => { this.revocations.delete(revocation) })
-    this.revocations.add(revocation)
+  private oidcRevoke(token: string, headers: Record<string, string>): void {
+    if (this.oidcClosed) return
+    const revocation = this.revokeWithRetry(token, headers).finally(() => { this.oidcRevocations.delete(revocation) })
+    this.oidcRevocations.add(revocation)
   }
 
   private async revokeWithRetry(token: string, headers: Record<string, string>): Promise<void> {
@@ -631,11 +635,11 @@ export class OidcAccount extends DeepSeekAccount {
           timer.unref()
         })
       }
-      if (this.logoutLifetime.signal.aborted) return
+      if (this.oidcLogoutLifetime.signal.aborted) return
       try {
         await revokeToken(resolved.revocation, token, this.clientAuth,
-          AbortSignal.any([this.logoutLifetime.signal, AbortSignal.timeout(this.requestTimeout)]),
-          { ...this.requestHeaders, ...headers })
+          AbortSignal.any([this.oidcLogoutLifetime.signal, AbortSignal.timeout(this.oidcRequestTimeout)]),
+          { ...this.oidcRequestHeaders, ...headers })
         return
       } catch {
         // Remote revocation failures never reverse local sign-out or expose token diagnostics.
@@ -643,18 +647,18 @@ export class OidcAccount extends DeepSeekAccount {
     }
   }
 
-  private invalidateDetails(): void {
-    this.lastProfile = undefined
-    this.detailsLifetime.abort()
-    this.detailsLifetime = new AbortController()
+  private oidcInvalidateDetails(): void {
+    this.oidcLastProfile = undefined
+    this.oidcDetailsLifetime.abort()
+    this.oidcDetailsLifetime = new AbortController()
   }
 
-  private changed(): void { for (const listener of this.listeners) listener() }
+  private oidcChanged(): void { for (const listener of this.oidcListeners) listener() }
 
-  private update(attempt: Attempt, value: Partial<SignInAttemptView>): void {
+  private oidcUpdate(attempt: Attempt, value: Partial<SignInAttemptView>): void {
     const { authorizeUrl: _url, ...rest } = attempt.view
     attempt.view = { ...rest, ...value }
-    this.changed()
+    this.oidcChanged()
   }
 
   /**
@@ -662,10 +666,10 @@ export class OidcAccount extends DeepSeekAccount {
    * a credential change. A stable ID that first appears or changes notifies watch consumers, so
    * identity consumers re-read getPlatformSession; repeated IDs stay silent.
    */
-  private cacheProfile(token: string, profile: Extract<AccountDetails['profile'], { status: 'ready' }>): void {
-    const previous = this.lastProfile?.profile.value.id || null
-    this.lastProfile = { token, profile }
-    if (previous !== (profile.value.id || null)) this.changed()
+  private oidcCacheProfile(token: string, profile: Extract<AccountDetails['profile'], { status: 'ready' }>): void {
+    const previous = this.oidcLastProfile?.profile.value.id || null
+    this.oidcLastProfile = { token, profile }
+    if (previous !== (profile.value.id || null)) this.oidcChanged()
   }
 
   /** Project userinfo claims through the configured claim names. */
@@ -683,7 +687,7 @@ export class OidcAccount extends DeepSeekAccount {
     }
   }
 
-  private async run(session: AuthorizationSession, attempt: Attempt): Promise<void> {
+  private async oidcRun(session: AuthorizationSession, attempt: Attempt): Promise<void> {
     const webServer = this.ctx.get('webServer')
     if (webServer === undefined || this.clientId === '') throw new OidcAuthError('protocol')
     const verifier = randomBytes(32).toString('base64url')
@@ -694,8 +698,8 @@ export class OidcAccount extends DeepSeekAccount {
     void code.promise.catch(() => undefined)
     const deadline = new AbortController()
     const signal = AbortSignal.any([session.signal, deadline.signal])
-    const expiresAt = Date.now() + this.attemptTimeout
-    const timer = setTimeout(() => { deadline.abort() }, this.attemptTimeout)
+    const expiresAt = Date.now() + this.oidcAttemptTimeout
+    const timer = setTimeout(() => { deadline.abort() }, this.oidcAttemptTimeout)
     const abort = (): void => { code.reject(new OidcAuthError('expired')) }
     signal.addEventListener('abort', abort, { once: true })
     try {
@@ -722,34 +726,34 @@ export class OidcAccount extends DeepSeekAccount {
       signal.throwIfAborted()
       const resolved = await resolveEndpoints(this.issuer, this.configuredEndpoints, this.discovery,
         this.allowLoopbackHttp,
-        AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeout)]), this.requestHeaders)
+        AbortSignal.any([signal, AbortSignal.timeout(this.oidcRequestTimeout)]), this.oidcRequestHeaders)
       this.endpointsPromise ??= Promise.resolve(resolved)
       const redirectUri = `${attempt.origin}/oauth/callback`
       const authorizeUrl = buildAuthorizeUrl(resolved.authorization, {
         clientId: this.clientId, redirectUri, scope: this.scope, state, codeChallenge: challenge,
       })
-      this.update(attempt, { phase: 'waiting-browser', authorizeUrl, expiresAt })
+      this.oidcUpdate(attempt, { phase: 'waiting-browser', authorizeUrl, expiresAt })
       const receivedCode = await code.promise
       signal.throwIfAborted()
-      this.update(attempt, { phase: 'exchanging' })
+      this.oidcUpdate(attempt, { phase: 'exchanging' })
       await this.ctx.credentials.modifyRecord(DEVICE, current => Promise.resolve(current === undefined
         ? { kind: 'grant' as const, payload: { id: randomUUID() } } : undefined))
       const tokens = await tokenRequest(resolved.token, {
         grant_type: 'authorization_code', code: receivedCode, redirect_uri: redirectUri, code_verifier: verifier,
-      }, this.clientAuth, AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeout)]),
-      { ...this.requestHeaders, ...attempt.clientHeaders })
+      }, this.clientAuth, AbortSignal.any([signal, AbortSignal.timeout(this.oidcRequestTimeout)]),
+      { ...this.oidcRequestHeaders, ...attempt.clientHeaders })
       signal.throwIfAborted()
       if (resolved.userinfo !== undefined) {
         try {
           const claims = await fetchUserInfo(resolved.userinfo, tokens.access_token,
-            AbortSignal.any([signal, AbortSignal.timeout(this.requestTimeout)]),
-            { ...this.requestHeaders, ...attempt.clientHeaders })
+            AbortSignal.any([signal, AbortSignal.timeout(this.oidcRequestTimeout)]),
+            { ...this.oidcRequestHeaders, ...attempt.clientHeaders })
           attempt.initialProfile = { token: tokens.access_token, value: { status: 'ready', value: this.profileOf(claims) } }
         } catch {
           // A userinfo prefetch failure falls back to the first explicit profile read.
         }
       }
-      this.update(attempt, { phase: 'committing' })
+      this.oidcUpdate(attempt, { phase: 'committing' })
       clearTimeout(timer)
       try {
         await session.commit({
@@ -785,7 +789,7 @@ export class OidcAccount extends DeepSeekAccount {
       + `<body><p>${message}</p><script nonce="${nonce}">window.close()</script></body></html>`)
   }
 
-  private finishFailedCallback(attempt: Attempt): void {
+  private oidcFinishFailedCallback(attempt: Attempt): void {
     if (attempt.loginSource === 'web') {
       const nonce = randomBytes(16).toString('base64url')
       const message = attempt.locale === 'zh_CN' ? '登录失败，请关闭此标签页并在原页面重试。'

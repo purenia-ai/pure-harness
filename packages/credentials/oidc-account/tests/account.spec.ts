@@ -145,7 +145,7 @@ async function fixture(options: FixtureOptions = {}) {
   const states = new AbortController()
   cleanups.push(async () => { states.abort() })
   async function wait(phase: string) {
-    for await (const state of account.watch(states.signal)) if (state.attempt?.phase === phase) return state
+    for await (const update of account.watch(states.signal)) if (update.state.attempt?.phase === phase) return update.state
     throw new Error(`missing phase ${phase}`)
   }
   return {
@@ -291,14 +291,13 @@ it('works without discovery when every endpoint is configured', async () => {
   expect((await f.account.getState()).status).toBe('credential-stored')
 })
 
-it('reports balance as unavailable and never lists bonuses', async () => {
+it('reports balance as unavailable and never lists notifications', async () => {
   const f = await fixture()
   await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
     kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
   }))
   expect(await f.account.getBalance(clientMetadata())).toEqual({ status: 'failed' })
-  expect(await f.account.getUnnotifiedBonuses(clientMetadata())).toBeNull()
-  expect(await f.account.ackBonusNotified('user-1' as never, 'order-1' as never, clientMetadata())).toBe(false)
+  expect(await f.account.getNotifications(clientMetadata())).toBeNull()
 })
 
 it('advertises same-origin account pages for the embedded document', async () => {
