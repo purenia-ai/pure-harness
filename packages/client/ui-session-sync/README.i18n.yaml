@@ -3,23 +3,23 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-session-sync/README.md
 /:
-  en: 5cfc9af276e2a4d5
-  zh: cc790b6d5a2a7f14
+  en: ad2fa826a76d1eea
+  zh: 9c400a1c15ce23e6
 /deepseek-ai-dsh-client-ui-session-sync:
   en: 1dce25ae7e71f581
   zh: ab8907e25c089d68
 /deepseek-ai-dsh-client-ui-session-sync/summary:
-  en: b9991c5285a136de
-  zh: b3c6df5138bd1bc7
+  en: 8b9cef18d96f546e
+  zh: 1cfc75512defa4e0
 /deepseek-ai-dsh-client-ui-session-sync/table-of-contents:
   en: d152484eb41ac6b4
   zh: 1db86285abf6c499
 /deepseek-ai-dsh-client-ui-session-sync/use-this-package:
-  en: f2a6ca8d186e9880
-  zh: 50b89869dfe44854
+  en: 324a2dce1df5d073
+  zh: 241524b14c6ec7f7
 /deepseek-ai-dsh-client-ui-session-sync/understand-the-implementation:
-  en: 927663139dbe1e4e
-  zh: 14de730be3944f6e
+  en: 03955ad7dd9c6f89
+  zh: 49d38edbd759c9ad
 /deepseek-ai-dsh-client-ui-session-sync/further-exploration:
   en: 58a9fd64cc0d2a55
   zh: a66eaebc15e4a1d3
@@ -39,8 +39,8 @@
   en: 53f11c9854c1d516
   zh: 6000b452cc4d0574
 /deepseek-ai-dsh-client-ui-session-sync/known-limitations-and-deferred-work:
-  en: a633d1e8ae791c42
-  zh: 63a02060eefdf838
+  en: e22133169a45fd03
+  zh: 58da865d33e18de1
 /deepseek-ai-dsh-client-ui-session-sync/known-limitations-and-deferred-work/dev-note:
   en: 0a1253c6f7b5e8b9
   zh: 9f56528562c7c914

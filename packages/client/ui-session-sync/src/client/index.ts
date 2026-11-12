@@ -1,4 +1,4 @@
-/** Session-sync controls: General settings switches and the Session more-actions row. */
+/** Session-sync controls: the General settings switches. */
 import type { Context } from '@deepseek-ai/cordis'
 import type { ConfigFormSnapshot } from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
@@ -7,7 +7,6 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-session-log-export/client'
 import { SyncRow } from './SyncRow.tsx'
-import { SyncMenuItem } from './SyncMenuItem.tsx'
 import { en, ja, es, fr, de, ru, pt, NS, zh, type SyncKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -56,9 +55,4 @@ export function apply(ctx: Context): void {
   ctx.effect(() => ctx.configForms.whileServed([namespace], () => ctx.slots.inject('settings.general.item', () =>
     ctx.slots.register({ name: 'settings.general.item', id: 'session-sync-hub', order: 95, locale: NS, inject: face }, SyncRow))),
   'ui-session-sync: settings rows')
-  ctx.effect(() => ctx.configForms.whileServed([namespace], () =>
-    ctx.slots.inject('conversation.session.header.utilities.actions', () => ctx.slots.register({
-      name: 'conversation.session.header.utilities.actions', id: 'session-sync', order: 30, locale: NS, inject: face,
-    }, SyncMenuItem))),
-  'ui-session-sync: session menu row')
 }

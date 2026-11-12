@@ -14,7 +14,7 @@ function namespaceRow(revision: number) {
   return { ns: NAMESPACE, schema: {}, value: { enabled: true, uploadReasoning: true, disabledSessions: [] }, applies: 'live', secrets: [], revision }
 }
 
-it('registers the settings rows and Session menu row only while the Host serves the namespace', async () => {
+it('registers the settings rows only while the Host serves the namespace', async () => {
   expect(hostApply).not.toThrow()
   const ctx = new Context()
   try {
@@ -29,20 +29,15 @@ it('registers the settings rows and Session menu row only while the Host serves 
     const slots = ctx.get('slots') as SlotRegistry
     slots.register({ name: 'root', children: {
       'settings.general.item': { kind: 'list', scope: 'root' },
-      'conversation.session.header.utilities.actions': { kind: 'list', scope: 'session' },
     } } as never, () => null)
     const fiber = ctx.plugin({ inject, apply })
     await fiber.await()
     await ctx.configForms.describe().ensure()
     expect(slots.entries('settings.general.item')).toHaveLength(0)
-    expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(0)
-
     describe.mockResolvedValue({ ok: true, value: { writable: true, hasDocument: true, namespaces: [namespaceRow(1)] } })
     remote.emit('settings/document-updated', [NAMESPACE, 1])
     await vi.waitFor(() => { expect(slots.entries('settings.general.item')).toHaveLength(1) })
-    await vi.waitFor(() => { expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(1) })
     expect(slots.entries('settings.general.item')[0]!.options).toMatchObject({ id: NAMESPACE, order: 95 })
-    expect(slots.entries('conversation.session.header.utilities.actions')[0]!.options).toMatchObject({ id: 'session-sync', order: 30 })
 
     const form = ctx.configForms.get(NAMESPACE)
     const ready = form.getSnapshot()
@@ -64,7 +59,6 @@ it('registers the settings rows and Session menu row only while the Host serves 
 
     await fiber.dispose()
     expect(slots.entries('settings.general.item')).toHaveLength(0)
-    expect(slots.entries('conversation.session.header.utilities.actions')).toHaveLength(0)
   } finally {
     await ctx.fiber.dispose()
   }
