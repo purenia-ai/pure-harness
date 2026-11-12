@@ -26,6 +26,7 @@ it('registers the settings rows only while the Host serves the namespace', async
     } }))
     const remote = new TestRemote(ctx, { settings: { describe } })
     await ctx.plugin({ inject: [...settingsInject], apply: settingsApply }).await()
+    ctx.provide('contextMenus', { register: vi.fn(() => () => {}) } as never)
     const slots = ctx.get('slots') as SlotRegistry
     slots.register({ name: 'root', children: {
       'settings.general.item': { kind: 'list', scope: 'root' },

@@ -1,5 +1,5 @@
 ---
-description: "General settings switches for hub session upload."
+description: "Session-header sync row and General settings switches for hub session upload."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Give **Settings → General** two switches: the archive switch and the reasoning upload switch. Nothing is stored in the browser: every write lands in the Host settings document through the shared configuration form.
+Give the Session Header's More menu one sync row and **Settings → General** two switches. The row lists the current Session's mute state and appends or removes that Session id from the Host `session-sync-hub` configuration. The settings rows edit the global switch and the reasoning upload switch. Nothing is stored in the browser: every write lands in the Host settings document through the shared configuration form.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ Give **Settings → General** two switches: the archive switch and the reasoning
 <a id="use-this-package"></a>
 ## Use this package
 
-The Web bundle mounts this companion beside the Host plugin. The General rows switch the archive on or off and choose whether assistant reasoning is included. See [Session sync to the hub](../../session/session-sync-hub/README.md#configuration) for batching and retry behavior.
+The Web bundle mounts this companion beside the Host plugin. The header row shows **Synced** with a check icon while the Session is archived and **Paused** with a pause icon after the user mutes it, and it stays disabled until the Host accepts a writable section; the General rows switch the archive on or off and choose whether assistant reasoning is included. A muted Session keeps buffering locally, so unmuting resumes from the acceptance watermark. See [Session sync to the hub](../../session/session-sync-hub/README.md#configuration) for batching and retry behavior.
 
 -----
 
@@ -35,7 +35,7 @@ The Web bundle mounts this companion beside the Host plugin. The General rows sw
 <details>
 <summary>Implementation details — click to expand</summary>
 
-The companion contributes two `settings.general.item` rows while the Host serves the `session-sync-hub` namespace. Both read and write the shared configuration form, writing `enabled` and `uploadReasoning`. The plugin owns no transport state.
+The companion contributes one `sessionHeader` context-menu entry and two `settings.general.item` rows while the Host serves the `session-sync-hub` namespace. All three read and write the shared configuration form: the menu row rewrites `disabledSessions`, the settings rows write `enabled` and `uploadReasoning`. The icons come from `contextMenu.icon` registrations this plugin owns. The plugin owns no transport state.
 
 </details>
 
@@ -69,6 +69,7 @@ Does not change the model request prefix.
 
 <a id="known-limitations-and-deferred-work"></a>
 
+- The menu row is unavailable until the Host serves the `session-sync-hub` namespace and accepts a writable section.
 - The control reports the configured mute state, not the upload progress of a specific batch.
 - Per-session mute lives in the Host settings document, so it does not travel with a Session fork.
 
