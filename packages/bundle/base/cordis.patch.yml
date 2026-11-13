@@ -75,6 +75,11 @@
 
     - id: typert-loader
       name: '@deepseek-ai/dsh-typert-loader'
+      config:
+        # The active OIDC provider subclasses the account service but does not
+        # ship a separate Typert manifest; register the base account contract.
+        packages:
+          - '@deepseek-ai/dsh-deepseek-account'
 
     - id: typert-gateway
       name: '@deepseek-ai/dsh-api-gateway'

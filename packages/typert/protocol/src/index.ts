@@ -396,15 +396,21 @@ export function RemoteScope(
 }
 
 /**
- * Read Remote markers attached to a live Service's class prototype.
+ * Read Remote markers attached to a live Service's class prototype chain.
  * The returned snapshot cannot mutate the stored descriptor.
  * @param service - live Service instance.
  * @returns markers in class declaration order.
  */
 export function remoteMethods(service: object): readonly RemoteMethodMarker[] {
-  const prototype = Object.getPrototypeOf(service) as object | null
-  if (prototype === null) return []
-  return (readRemoteMethodDescriptor(prototype)?.methods ?? []).map(marker => ({ ...marker }))
+  let prototype = Object.getPrototypeOf(service) as object | null
+  const methods = new Map<string, RemoteMethodMarker>()
+  while (prototype !== null && prototype !== Object.prototype) {
+    for (const marker of readRemoteMethodDescriptor(prototype)?.methods ?? []) {
+      if (!methods.has(marker.method)) methods.set(marker.method, marker)
+    }
+    prototype = Object.getPrototypeOf(prototype) as object | null
+  }
+  return [...methods.values()].map(marker => ({ ...marker }))
 }
 
 function readRemoteMethodDescriptor(prototype: object): RemoteMethodDescriptorV1 | undefined {

@@ -60,11 +60,18 @@ export function connectDesktopWelcome(
       headers: { 'content-type': 'application/json', cookie },
       body: JSON.stringify({ type: 'client-request', rpcId, method, payload: { args: request.args } }),
     })
-    if (!response.ok) throw new Error('desktop welcome: Web request failed')
+    if (!response.ok) throw new Error(`desktop welcome: ${method} returned HTTP ${String(response.status)}`)
     const envelope: unknown = await response.json()
-    if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId
-      || !record(envelope.result) || envelope.result.ok !== true) {
+    if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId || !record(envelope.result)) {
       throw new Error('desktop welcome: Web RPC failed')
+    }
+    if (envelope.result.ok !== true) {
+      const failure: unknown = envelope.result.error
+      if (record(failure) && typeof failure.code === 'string' && typeof failure.message === 'string') {
+        const message = failure.message.replace(/[\r\n\t]+/gu, ' ').slice(0, 300)
+        throw new Error(`desktop welcome: ${method} failed (${failure.code}): ${message}`)
+      }
+      throw new Error(`desktop welcome: ${method} failed (unknown RPC error)`)
     }
     return envelope.result.value
   }
