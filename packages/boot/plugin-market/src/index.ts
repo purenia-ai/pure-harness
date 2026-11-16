@@ -34,6 +34,7 @@ import type {
 } from './types.ts'
 
 export type * from './types.ts'
+export { PluginMarketError, type PluginMarketErrorCode } from './error.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {

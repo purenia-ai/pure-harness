@@ -703,8 +703,9 @@ export class OidcAccount extends DeepSeekAccount {
     const abort = (): void => { code.reject(new OidcAuthError('expired')) }
     signal.addEventListener('abort', abort, { once: true })
     try {
+      // The browser reaches this callback anonymously; the state parameter authenticates it instead.
       attempt.disposeCallback = this.ctx.effect(() => webServer.register({
-        kind: 'exact', path: '/oauth/callback', handler: (req, res) => {
+        kind: 'exact', path: '/oauth/callback', auth: 'anonymous', handler: (req, res) => {
           let url: URL
           try { url = new URL(req.url ?? '/', 'http://127.0.0.1') }
           catch { res.writeHead(400, { 'cache-control': 'no-store' }).end(); return }
