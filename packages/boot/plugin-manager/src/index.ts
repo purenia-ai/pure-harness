@@ -28,7 +28,7 @@ import {
 import { OPTIONAL_BUNDLES, OFFICIAL_ON_DEMAND_CATALOG, PROTECTED_PLUGINS } from '@deepseek-ai/dsh-official-bundles'
 import type {} from '@deepseek-ai/dsh-hmr'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
-import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account/src/protocol.ts'
+import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account'
 import type { ProfileContext, ProfileManifest } from '@deepseek-ai/dsh-app-boot'
 import { bundleManifest, readProfileRegistry, registryArguments, runProfilePnpm, saveManifest, viewProfilePackage } from './operations.ts'
 import { classifyInstallFailure } from './install-failure.ts'

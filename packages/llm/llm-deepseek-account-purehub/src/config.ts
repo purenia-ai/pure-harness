@@ -22,8 +22,8 @@ import type { DeepSeekCatalogModel, Options as ProtocolOptions } from '@deepseek
 import type { Config as ProtocolConfig } from '@deepseek-ai/dsh-llm-deepseek'
 import { DEFAULT_MODELS_MAX_AGE_MS, DEFAULT_MODELS_TIMEOUT_MS } from '@deepseek-ai/dsh-llm-deepseek'
 import type { ModelOverride } from '@deepseek-ai/dsh-llm-deepseek'
-import { resolveAccountOptions } from '@deepseek-ai/dsh-llm-deepseek-account/src/config.ts'
-import type { ResolvedAccountOptions } from '@deepseek-ai/dsh-llm-deepseek-account/src/config.ts'
+import { resolveAccountOptions } from '@deepseek-ai/dsh-llm-deepseek-account'
+import type { ResolvedAccountOptions } from '@deepseek-ai/dsh-llm-deepseek-account'
 
 const MODEL_MODALITIES = ['text', 'image'] as const
 

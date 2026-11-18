@@ -66,7 +66,7 @@ export async function smokeDesktopRuntime(
     }))
     writeFileSync(join(installedPlugin, 'index.js'), `
 export function apply(ctx) {
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-installed',
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-installed', auth: 'anonymous',
     handler(_request, response) { response.end('installed plugin ready') } }))
 }
 `)
@@ -103,9 +103,9 @@ import { inspect } from 'node:util'
 import { readFile } from 'node:fs/promises'
 export function apply(ctx) {
   if (!(ctx instanceof Context)) throw new Error('desktop runtime: external plugin loaded another Cordis instance')
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke',
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke', auth: 'anonymous',
     handler(_request, response) { response.end('plugin route ready') } }))
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-install',
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-install', auth: 'anonymous',
     async handler(_request, response) {
       try {
         response.end(JSON.stringify(await ctx.pluginManager.installBundle(${JSON.stringify(installedPlugin)})))
@@ -114,7 +114,7 @@ export function apply(ctx) {
         response.end(inspect(error, { depth: 5 }))
       }
     } }))
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-skills',
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-skills', auth: 'anonymous',
     async handler(_request, response) {
       try {
         const names = ${JSON.stringify(OFFICE_SKILLS)}
@@ -130,7 +130,7 @@ export function apply(ctx) {
       }
     } }))
   for (const input of ${JSON.stringify(inputs)}) {
-    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-office/' + input.extension,
+    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-office/' + input.extension, auth: 'anonymous',
       async handler(_request, response) {
         try {
           const bytes = Buffer.from(input.bytes, 'base64')
@@ -143,7 +143,7 @@ export function apply(ctx) {
           response.end(inspect(error, { depth: 5 }))
         }
       } }))
-    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-office-operations/' + input.extension,
+    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-office-operations/' + input.extension, auth: 'anonymous',
       async handler(_request, response) {
         try {
           const bytes = Buffer.from(input.bytes, 'base64')
@@ -191,7 +191,7 @@ export function apply(ctx) {
       throw new Error('desktop runtime: packaged frontend smoke failed')
     }
     const pluginResponse = await fetch(new URL('/desktop-smoke', ready.url), { headers: { cookie } })
-    if (await pluginResponse.text() !== 'plugin route ready') throw new Error('desktop runtime: plugin HTTP route failed')
+    if (await pluginResponse.text() !== 'plugin route ready') throw new Error(`desktop runtime: plugin HTTP route failed (${String(pluginResponse.status)})`)
     const installation = await fetch(new URL('/desktop-smoke-install', ready.url), {
       headers: { cookie }, signal: AbortSignal.timeout(120_000),
     })

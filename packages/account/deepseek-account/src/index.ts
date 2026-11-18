@@ -18,6 +18,7 @@ import { revokeAccount, type LogoutRetryPolicy } from './logout.ts'
 import { ACCOUNT_TOKEN_HEADER, AccountUnauthorizedError, PlatformAuthError, platformHeaders, platformOrigin, browserUrl, requestPlatform, initialization, exchange, loginOrigin } from './protocol.ts'
 
 export type * from './types.ts'
+export { ACCOUNT_TOKEN_HEADER } from './protocol.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context { deepseekAccount: DeepSeekAccount }

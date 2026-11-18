@@ -12,6 +12,9 @@ import { cancelAccountTasks, installAccountTaskCancellation } from './account-ta
 import { Config, plainAccountOptions, resolveAccountOptions } from './config.ts'
 
 export { Config } from './config.ts'
+export { resolveAccountOptions } from './config.ts'
+export type { ResolvedAccountOptions } from './config.ts'
+export { installAccountTaskCancellation } from './account-tasks.ts'
 export const name = 'llm-deepseek-account'
 export const inject = ['llm', 'deepseekAuth']
 
