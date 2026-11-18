@@ -28,7 +28,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-基于 base 的 profile 提供管理服务。在 Web 中，侧边栏的**插件**页（[ui-plugin-manager](../../client/ui-plugin-manager/README.zh.md)）管理 profile 的组合包及其能唯一定位的行；设置页的插件列表保持只读。Agent 预设条目保持只读。`plugin_manager` 工具提供相同操作，在标准和 Creator 预设中启用。其他 Web 预设仍默认禁用。完整 SDK profile 在 profile 作用域为 native/PTC 模式启用此工具；没有 HMR 时，保存的变更返回 `restart-required` 和 `no-hmr`，在运行时重启后应用。每个工具操作都要求 `danger-full-access` 或本次调用的批准。在较低沙箱模式下，`ask` 会请求审批；`never`、拒绝、取消或审批渠道不可用时均不执行。批准不改变会话的权限模式。profile 变更跨会话持久化，已安装的 Host 代码在宿主进程内运行，不受工作区沙箱限制。依赖构建脚本仍需单独批准。
+基于 base 的 profile 提供管理服务。在 Web 中，侧边栏的**插件**页（[ui-plugin-manager](../../client/ui-plugin-manager/README.zh.md)）管理 profile 的组合包及其能唯一定位的行。Agent 预设条目保持只读。`plugin_manager` 工具提供相同操作，在标准和 Creator 预设中启用。其他 Web 预设仍默认禁用。完整 SDK profile 在 profile 作用域为 native/PTC 模式启用此工具；没有 HMR 时，保存的变更返回 `restart-required` 和 `no-hmr`，在运行时重启后应用。每个工具操作都要求 `danger-full-access` 或本次调用的批准。在较低沙箱模式下，`ask` 会请求审批；`never`、拒绝、取消或审批渠道不可用时均不执行。批准不改变会话的权限模式。profile 变更跨会话持久化，已安装的 Host 代码在宿主进程内运行，不受工作区沙箱限制。依赖构建脚本仍需单独批准。
 
 除完整 SDK profile 外，未使用 Agent 预设的部署在 profile patch 中启用工具；安装/移除包要求 PATH 中有 pnpm，或显式配置 `pnpmCommand`，启动器提供的包管理器优先；使用预设的会话由其预设中的 `tool-plugin-manager` 条目控制。
 
@@ -93,7 +93,7 @@ CLI 提供 `dsh plugin --profile <profile> version-exemptions`、`allow-version 
 | `registry` | pnpm 自身配置 | 查询与安装首先询问的注册表，http(s) URL；缺省为 pnpm 自身配置指定的那个。 |
 | `fallbackRegistries` | `['https://registry.npmmirror.com/']` | 前一个注册表不可达或没有该包副本时依次询问的注册表，http(s) URL；pnpm 自身的注册表只在它指向 npm 官方源或这里的某一个时才进入顺序。 |
 | `scopedRegistries` | `[]` | 只服务其已发布包所在 scope、而不代理 npm 的注册表，http(s) URL。从这类注册表安装时，只把该包的 scope 路由过去（`--@scope:registry=<url>`），因此其余包仍走 pnpm 自身配置指定的注册表，该注册表也不会被要求承载 npm；不带 scope 的包名，或不在本列表中的注册表，则对整个依赖图生效（`--registry=<url>`）。 |
-| `authenticatedOrigins` | `[]` | 其注册表查询与包下载需要账号服务鉴权的 origin：每次 pnpm 运行通过 `deepseekAccount.resolveToken` 现取的新鲜 token 以按 host 划分的 npm-config 环境变量注入；安装需要授权而不存在可用授权时，在 pnpm 启动前以 `sign-in-required` 失败。不在此列表中的 origin 永远不会收到 token，且 token 从不写入 profile。 |
+| `authenticatedOrigins` | `[]` | 其注册表查询与包下载需要账号服务鉴权的 origin：每次 pnpm 运行通过 `deepseekAccount.resolveRequestCredential` 现取的新鲜 token 以按 host 划分的 npm-config 环境变量注入；安装需要授权而不存在可用授权时，在 pnpm 启动前以 `sign-in-required` 失败。不在此列表中的 origin 永远不会收到 token，且 token 从不写入 profile。 |
 | `outputBytes` | `16384` | 每次操作返回的 pnpm 诊断字节上限；完整输出保留在返回的日志路径中。 |
 | `lockWaitMs` | `120000` | 获取 profile 写锁的最长等待毫秒数。 |
 | `versionListLimit` | `20` | 版本列表读取并返回的、比已安装版本新的最新版本个数。 |
@@ -145,7 +145,6 @@ service 运行若在 `idleTimeoutMs` 内没有任何捕获输出即被终止，�
 - [App boot](../app-boot/README.zh.md)——profile 配置层与启动策略。
 - [Plugin inventory](../../host/plugin-inventory/README.zh.md)——当前 Loader 和预设状态。
 - [插件管理页](../../client/ui-plugin-manager/README.zh.md)——基于本服务的 Web 侧边栏页面。
-- [Plugin settings](../../client/ui-settings-plugin-inventory/README.zh.md)——只读的 Web 清单。
 
 <a id="model-experience"></a>
 ## 模型体验
@@ -180,7 +179,7 @@ service 运行若在 `idleTimeoutMs` 内没有任何捕获输出即被终止，�
 - 仅启动时加载的 profile 不能删除当前进程启动时使用的包；停止进程后使用 `dsh plugin`。
 - 管理器不能关闭自身所需的管理组件、修改其他 profile 或编辑 agent 预设组合。
 - 失败的删除可能留下部分依赖改动，失败或被取消的安装可能在 `node_modules` 或 pnpm 缓存中留下已下载文件。文件缺失的未启用依赖仍可删除。诊断日志保留在 profile 的 `.plugin-manager/logs` 目录中。
-- 管理结果描述 Host 激活状态。浏览器同步失败会在设置的插件列表中单独显示。
+- 管理结果描述 Host 激活状态。浏览器同步失败会在插件页面的同步提示中单独显示。
 - Desktop 包管理操作仍由 Desktop shell 负责。
 
 <a id="failure-behavior"></a>

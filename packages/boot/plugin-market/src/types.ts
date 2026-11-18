@@ -7,11 +7,11 @@ import type { DetailFailureReason } from '@deepseek-ai/dsh-plugin-detail/types'
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
-    /** An index URL is not http(s), or carries credentials or a fragment. */
+    /** An index address is invalid for its HTTP(S) or Git source. */
     'plugin-market/invalid-index-url': { readonly url: string; readonly reason: string }
     /** The URL is not one of the configured index sources. */
     'plugin-market/unknown-index': { readonly url: string }
-    /** The index could not be fetched: network failure, timeout, redirect, non-2xx status, or a body over the size limit. */
+    /** The source did not supply the index, or the index exceeded its size limit. */
     'plugin-market/fetch-failed': { readonly url: string; readonly reason: string }
     /** The origin is one of `authenticatedOrigins` and no usable account grant exists; no request was sent. */
     'plugin-market/sign-in-required': { readonly url: string }

@@ -27,7 +27,7 @@
       "path": "../../util/launch-environment"
     },
     {
-      "path": "../../credentials/deepseek-account"
+      "path": "../../account/deepseek-account"
     }
   ]
 }

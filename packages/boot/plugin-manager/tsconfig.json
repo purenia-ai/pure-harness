@@ -72,7 +72,7 @@
       "path": "../../interaction/user-approval"
     },
     {
-      "path": "../../credentials/deepseek-account"
+      "path": "../../account/deepseek-account"
     },
     {
       "path": "../../util/plugin-detail"

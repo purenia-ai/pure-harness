@@ -33,6 +33,11 @@ interface FixtureOptions {
   seedGrant?: Record<string, unknown>
 }
 
+/** The token one released credential would send to `url`. */
+async function token(account: OidcAccount, url: string): Promise<string | undefined> {
+  return (await account.resolveRequestCredential(url))?.headers['x-dsh-auth-token']
+}
+
 async function fixture(options: FixtureOptions = {}) {
   const home = await mkdtemp(join(tmpdir(), 'dsh-oidc-account-'))
   cleanups.push(() => rm(home, { recursive: true, force: true }))
@@ -207,8 +212,8 @@ it('resolves the token only for the inference origin', async () => {
   await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
     kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin },
   }))
-  expect(await f.account.resolveToken('https://hub.puresnake.com/v1/messages')).toBe('access-token-1')
-  expect(await f.account.resolveToken('https://other.example.com/v1/messages')).toBeUndefined()
+  expect(await token(f.account, 'https://hub.puresnake.com/v1/messages')).toBe('access-token-1')
+  expect(await token(f.account, 'https://other.example.com/v1/messages')).toBeUndefined()
 })
 
 it('refreshes a near-expiry grant under the record lock', async () => {
@@ -216,14 +221,14 @@ it('refreshes a near-expiry grant under the record lock', async () => {
   await f.ctx.credentials.modifyRecord(KEY, () => Promise.resolve({
     kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin, refreshToken: 'refresh-1', expiresAt: Date.now() + 1_000 },
   }))
-  expect(await f.account.resolveToken('https://hub.puresnake.com')).toBe('access-token-2')
+  expect(await token(f.account, 'https://hub.puresnake.com')).toBe('access-token-2')
   expect(f.tokenRequests).toHaveLength(1)
   expect(f.tokenRequests[0]).toMatchObject({ grant_type: 'refresh_token', refresh_token: 'refresh-1', client_id: 'dsh-desktop' })
   const stored = await f.ctx.credentials.readRecord(KEY)
   expect(stored?.kind === 'grant' && (stored.payload as { token: string }).token).toBe('access-token-2')
   expect(stored?.kind === 'grant' && (stored.payload as { refreshToken: string }).refreshToken).toBe('refresh-2')
   // The refreshed grant is fresh; a second resolution does not hit the token endpoint again.
-  expect(await f.account.resolveToken('https://hub.puresnake.com')).toBe('access-token-2')
+  expect(await token(f.account, 'https://hub.puresnake.com')).toBe('access-token-2')
   expect(f.tokenRequests).toHaveLength(1)
 })
 
@@ -233,7 +238,7 @@ it('expires the grant when the refresh token is rejected', async () => {
     kind: 'grant', payload: { version: 1, token: 'access-token-1', issuer: f.origin, refreshToken: 'refresh-1', expiresAt: Date.now() + 1_000 },
   }))
   f.failRefresh()
-  expect(await f.account.resolveToken('https://hub.puresnake.com')).toBeUndefined()
+  expect(await token(f.account, 'https://hub.puresnake.com')).toBeUndefined()
   expect((await f.account.getState()).status).toBe('signed-out')
 })
 

@@ -48,7 +48,7 @@ kind: "package-reference"
 
 ### Token 生命周期
 
-access token 临近过期（`refreshMarginMs`，默认 60 秒）时，`resolveToken` 与账号详情查询会在记录存储的跨进程锁内执行 `refresh_token` 兑换并单飞去重；SSO 返回 `invalid_grant` 会使凭据失效并广播 `deepseek-account/session-expired`。没有 refresh token 且已过期的授权同样失效。
+access token 临近过期（`refreshMarginMs`，默认 60 秒）时，`resolveRequestCredential` 与账号详情查询会在记录存储的跨进程锁内执行 `refresh_token` 兑换并单飞去重；SSO 返回 `invalid_grant` 会使凭据失效并广播 `deepseek-account/session-expired`。没有 refresh token 且已过期的授权同样失效。
 
 ### 账号详情
 

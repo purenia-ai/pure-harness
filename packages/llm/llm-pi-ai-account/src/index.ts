@@ -27,6 +27,7 @@ import { isVolatile, type Volatile } from '@deepseek-ai/cosmokit'
 import Schema from '@deepseek-ai/schemastery'
 import { LlmError } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
+import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account/src/protocol.ts'
 import { PiAiAdapter, supportedProtocols } from '@deepseek-ai/dsh-llm-pi-ai'
 import type { PiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
 import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai/src/config.ts'
@@ -98,7 +99,7 @@ export function apply(ctx: Context, config: Config): void {
       throw new LlmError(`llm-pi-ai-account: route "${provider}" must name a baseURL; account authentication validates its origin`, 'INVALID_CONFIG')
     }
     const account = ctx.get('deepseekAccount')
-    const token = await account?.resolveToken(new URL(profile.baseURL).origin)
+    const token = (await account?.resolveRequestCredential(new URL(profile.baseURL).origin))?.headers[ACCOUNT_TOKEN_HEADER]
     if (token === undefined) {
       throw new LlmError('Sign in to use the account-authenticated provider. The request destination must allow account authentication.', 'ACCOUNT_SIGN_IN_REQUIRED')
     }

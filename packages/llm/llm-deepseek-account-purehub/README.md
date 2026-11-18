@@ -41,7 +41,7 @@ The fork's gateway serves the Anthropic Messages dialect at `/v1/messages` and t
         inputModalities: [text, image]
 ```
 
-Only `deepseekAccount.resolveToken(url)` supplies the token; the account service validates the destination. Signed-out or ineligible requests fail with `ACCOUNT_SIGN_IN_REQUIRED` and discovery returns an empty catalog. The route never falls back to an API key.
+Only `deepseekAccount.resolveRequestCredential(url)` supplies the token; the account service validates the destination. Signed-out or ineligible requests fail with `ACCOUNT_SIGN_IN_REQUIRED` and discovery returns an empty catalog. The route never falls back to an API key.
 
 The catalog comes from the account's `GET /v1/models` listing when the Messages `baseURL` ends in `/v1`, and from `GET /models` otherwise. A gateway may answer one OpenAI-shaped listing for every dialect and mark no entry with `api_capabilities`, so the listing carries no dialect information; `otherRoutePrefixes` is how the deployment states it. Before any listing loads, the route serves the declared set, or the built-in catalog (`deepseek-flash` and `deepseek-v4-pro`) when nothing is declared.
 

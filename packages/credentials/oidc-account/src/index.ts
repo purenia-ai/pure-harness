@@ -7,8 +7,8 @@ import { promises as streamPromises } from 'node:stream'
 import { Context, Service } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
 import { z } from 'zod'
-import { DeepSeekAccount, type AccountClientMetadata, type AccountDetails, type AccountProfile, type AccountUserId, type AccountUpdate, type AccountView, type PlatformSession, type SignInAttemptId, type SignInAttemptView } from '@deepseek-ai/dsh-deepseek-account'
-import { installAccountTaskCancellation } from '@deepseek-ai/dsh-deepseek-account'
+import { DeepSeekAccount, type AccountClientMetadata, type AccountDetails, type AccountProfile, type AccountRequestCredential, type AccountUserId, type AccountUpdate, type AccountView, type PlatformSession, type SignInAttemptId, type SignInAttemptView } from '@deepseek-ai/dsh-deepseek-account'
+import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account/src/protocol.ts'
 import { platformClientHeaders, platformWireLocale } from '@deepseek-ai/dsh-deepseek-account/client-metadata'
 import { credentialKey } from '@deepseek-ai/dsh-credentials'
 import type { AuthorizationSession } from '@deepseek-ai/dsh-authorization'
@@ -214,11 +214,12 @@ export class OidcAccount extends DeepSeekAccount {
   private oidcDetailsLifetime = new AbortController()
   private oidcClosed = false
   private oidcRemoving: Promise<AccountView> | undefined
+  /** Aborts the request credentials released for the current grant once it is removed. */
+  private oidcSignedOut = new AbortController()
 
   /** @param ctx - Host with authorization and credentials services. @param config - deployment options. */
   constructor(ctx: Context, config: Config = {}) {
     super(ctx)
-    installAccountTaskCancellation(ctx)
     const resolved = Config(config)
     this.issuer = oidcOrigin(resolved.issuer, resolved.allowLoopbackHttp)
     const inference = new URL(resolved.inferenceOrigin)
@@ -356,13 +357,6 @@ export class OidcAccount extends DeepSeekAccount {
     return Promise.resolve(null)
   }
 
-  override async rejectToken(token: string): Promise<void> {
-    const lifetime = this.oidcDetailsLifetime
-    const stored = await this.oidcReadCurrentGrant(lifetime)
-    if (stored?.token !== token || this.oidcDetailsLifetime !== lifetime) return
-    await this.oidcExpireCredential(token, lifetime)
-  }
-
   private async oidcExpireCredential(token: string, lifetime: AbortController): Promise<void> {
     this.oidcRemoving ??= (async () => {
       if (this.oidcAttempt !== undefined) await this.cancelSignIn(this.oidcAttempt.view.id)
@@ -371,6 +365,10 @@ export class OidcAccount extends DeepSeekAccount {
       const current = grant.parse(record.payload)
       if (current.token !== token || current.issuer !== this.issuer) return this.getState()
       await this.ctx.credentials.deleteRecord(KEY)
+      this.oidcSignedOut.abort()
+      this.oidcSignedOut = new AbortController()
+      this.oidcSignedOut.abort()
+      this.oidcSignedOut = new AbortController()
       this.ctx.emit('deepseek-account/session-expired')
       this.oidcAttempt = undefined
       this.ctx.emit('deepseek-account/signed-out')
@@ -504,8 +502,15 @@ export class OidcAccount extends DeepSeekAccount {
     }
   }
 
-  override async resolveToken(url: string): Promise<string | undefined> {
+  /**
+   * Release the OIDC grant for one request destination as the request carries it, with the rejection
+   * that invalidates it and the signal that aborts when its sign-out completes. Host-only.
+   * @param url - actual request destination or API base URL.
+   * @returns the request credential, or undefined for other origins or a signed-out account.
+   */
+  override async resolveRequestCredential(url: string): Promise<AccountRequestCredential | undefined> {
     if (this.oidcClosed || this.oidcRemoving !== undefined) return undefined
+    const revoked = this.oidcSignedOut.signal
     const destination = new URL(url)
     if (destination.origin !== this.oidcInferenceOrigin || destination.username || destination.password) return undefined
     const stored = await this.oidcReadCurrentGrant(this.oidcDetailsLifetime)
@@ -516,9 +521,23 @@ export class OidcAccount extends DeepSeekAccount {
     if (this.needsRefresh(stored)) {
       const refreshed = await this.usableGrant(this.oidcDetailsLifetime)
       if (refreshed === null || refreshed.token.startsWith('dsh_mock_')) return undefined
-      return refreshed.token
+      return this.credentialFor(refreshed.token, revoked)
     }
-    return stored.token
+    return this.credentialFor(stored.token, revoked)
+  }
+
+  /** One released credential for `token`, invalidated only while it is still the stored grant. */
+  private credentialFor(token: string, revoked: AbortSignal): AccountRequestCredential {
+    return {
+      headers: { [ACCOUNT_TOKEN_HEADER]: token },
+      revoked,
+      reject: async () => {
+        const lifetime = this.oidcDetailsLifetime
+        const stored = await this.oidcReadCurrentGrant(lifetime)
+        if (stored?.token !== token || this.oidcDetailsLifetime !== lifetime) return
+        await this.oidcExpireCredential(token, lifetime)
+      },
+    }
   }
 
   override async startSignIn(client: AccountClientMetadata, callbackOrigin: string, loginSource: 'web' | 'desktop'): Promise<AccountView> {

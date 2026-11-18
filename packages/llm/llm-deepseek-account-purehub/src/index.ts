@@ -3,8 +3,10 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type { Context } from '@deepseek-ai/cordis'
 import { ACCOUNT_QUOTA_EXCEEDED_CODE, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
+import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account/src/protocol.ts'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { catalogModelInfo, createModelListingCache, registerDeepSeekProvider, requestModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import { installAccountTaskCancellation } from '@deepseek-ai/dsh-llm-deepseek-account/src/account-tasks.ts'
+import { catalogModelInfo, createModelListingCache, registerDeepSeekProvider, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import type { DeepSeekRequestAuth, ListingView, ModelListing, ResolvedDeepSeekOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions, resolvePurehubOptions } from './config.ts'
 import { resolveAccountCatalog } from './resolve-catalog.ts'
@@ -47,15 +49,19 @@ export function apply(ctx: Context, config: Config): void {
     return { ...resolved, catalog: { ...resolved.catalog, url: listingEndpoint(resolved.protocol.baseURL) } }
   }
   settings()
+  // A sign-out ends the running Agents whose latest request used this route.
+  installAccountTaskCancellation(ctx, PROVIDER)
+  /** Headers carrying one account token for the route's configured scheme. */
+  const tokenHeaders = (token: string): Record<string, string> =>
+    settings().authScheme === 'bearer' ? { authorization: `Bearer ${token}` } : { [TOKEN_HEADER]: token }
   const supported = resolveAdapterOptions({}).models
   const account = () => ctx.get('deepseekAccount')
   const resolveAuth = async (connection: AccountConnection): Promise<DeepSeekRequestAuth> => {
-    const token = await account()?.resolveToken(connection.baseURL)
-    if (token === undefined) throw new LlmError('Sign in to PureHub to use the account provider. The request destination must allow account authentication.', 'ACCOUNT_SIGN_IN_REQUIRED')
+    const credential = await account()?.resolveRequestCredential(connection.baseURL)
+    const token = credential?.headers[ACCOUNT_TOKEN_HEADER]
+    if (credential === undefined || token === undefined) throw new LlmError('Sign in to PureHub to use the account provider. The request destination must allow account authentication.', 'ACCOUNT_SIGN_IN_REQUIRED')
     return {
-      headers: connection.authScheme === 'bearer'
-        ? { authorization: `Bearer ${token}` }
-        : { [TOKEN_HEADER]: token },
+      headers: tokenHeaders(token),
       onRequestError: async (error) => {
         if (!(error instanceof LlmError)) return error
         if (error.code === QUOTA_EXCEEDED_CODE) {
@@ -63,7 +69,7 @@ export function apply(ctx: Context, config: Config): void {
         }
         if (error.failure.status !== 401) return error
         const rejected = new LlmError(error.message, 'ACCOUNT_TOKEN_INVALID', { ...error.failure, cause: error })
-        try { await account()?.rejectToken(token) }
+        try { await credential.reject() }
         catch (_credentialRemovalFailed) { /* Storage failure cannot replace the inference failure. */ }
         return rejected
       },
@@ -71,12 +77,9 @@ export function apply(ctx: Context, config: Config): void {
   }
   const catalog = createModelListingCache(ctx, name, PROVIDER, {
     settings: () => settings().catalog,
-    credential: async url => account()?.resolveToken(url),
-    load: (url, token, signal) => {
-      const headers = settings().authScheme === 'bearer'
-        ? { authorization: `Bearer ${token}` }
-        : { [TOKEN_HEADER]: token }
-      return requestModelListing(url, headers, signal)
+    credential: async (url) => {
+      const token = (await account()?.resolveRequestCredential(url))?.headers[ACCOUNT_TOKEN_HEADER]
+      return token === undefined ? undefined : tokenHeaders(token)
     },
   })
   let loggedListing: ModelListing | undefined

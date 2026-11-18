@@ -27,7 +27,7 @@
       "path": "../../llm/llm-pi-ai"
     },
     {
-      "path": "../../credentials/deepseek-account"
+      "path": "../../account/deepseek-account"
     },
     {
       "path": "../../credentials/credentials"

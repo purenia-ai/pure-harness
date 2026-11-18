@@ -41,7 +41,7 @@ fork 的网关在 `/v1/messages` 提供 Anthropic Messages 方言，模型列表
         inputModalities: [text, image]
 ```
 
-账号 token 仅由 `deepseekAccount.resolveToken(url)` 提供，目标地址必须通过账号服务的来源校验。未登录或目标不允许账号鉴权时，请求以 `ACCOUNT_SIGN_IN_REQUIRED` 失败，目录为空；不会回退到 API key。
+账号 token 仅由 `deepseekAccount.resolveRequestCredential(url)` 提供，目标地址必须通过账号服务的来源校验。未登录或目标不允许账号鉴权时，请求以 `ACCOUNT_SIGN_IN_REQUIRED` 失败，目录为空；不会回退到 API key。
 
 路由的目录来自账号的 `GET /v1/models` 列表（当 Messages `baseURL` 以 `/v1` 结尾时），否则来自 `GET /models`。网关可能对每种方言只回一份 OpenAI 形状的列表，且任何条目都不带 `api_capabilities`，所以列表本身不带方言信息；方言由 `otherRoutePrefixes` 声明。还没有加载到任何列表时，路由提供声明的那一组；没有声明时提供内置目录（`deepseek-flash` 与 `deepseek-v4-pro`）。
 

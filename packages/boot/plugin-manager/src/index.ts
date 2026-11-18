@@ -28,6 +28,7 @@ import {
 import { OPTIONAL_BUNDLES, OFFICIAL_ON_DEMAND_CATALOG, PROTECTED_PLUGINS } from '@deepseek-ai/dsh-official-bundles'
 import type {} from '@deepseek-ai/dsh-hmr'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
+import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account/src/protocol.ts'
 import type { ProfileContext, ProfileManifest } from '@deepseek-ai/dsh-app-boot'
 import { bundleManifest, readProfileRegistry, registryArguments, runProfilePnpm, saveManifest, viewProfilePackage } from './operations.ts'
 import { classifyInstallFailure } from './install-failure.ts'
@@ -85,7 +86,7 @@ export interface Config {
    */
   scopedRegistries?: string[]
   /**
-   * Origins whose registry lookups and package downloads authenticate with `deepseekAccount.resolveToken`: each pnpm
+   * Origins whose registry lookups and package downloads authenticate with `deepseekAccount.resolveRequestCredential`: each pnpm
    * run receives the fresh token as a host-scoped npm-config environment entry, and an install needing a grant none
    * exists for fails with `sign-in-required` before pnpm starts. Origins outside this list never receive a token.
    */
@@ -1311,8 +1312,8 @@ export class PluginManager extends TypertRemoteService {
     if (wanted.size === 0) return undefined
     const env: Record<string, string> = {}
     for (const [origin, url] of wanted) {
-      // resolveToken refreshes when needed and answers undefined for a signed-out or revoked grant.
-      const token = await account.resolveToken(url)
+      // A released credential refreshes when needed and stays undefined for a signed-out or revoked grant.
+      const token = (await account.resolveRequestCredential(url))?.headers[ACCOUNT_TOKEN_HEADER]
       if (token === undefined) return 'no-grant'
       env[`npm_config_//${new URL(origin).host}/:_authToken`] = token
     }

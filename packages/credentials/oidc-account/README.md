@@ -48,7 +48,7 @@ Endpoint resolution prefers explicit configuration (`authorizationEndpoint`, `to
 
 ### Token lifecycle
 
-When an access token nears expiry (`refreshMarginMs`, default 60 seconds), `resolveToken` and account-detail queries run a `refresh_token` exchange inside the record store's cross-process lock with single-flight deduplication. An `invalid_grant` answer expires the credential and broadcasts `deepseek-account/session-expired`; a grant without a refresh token expires the same way once stale.
+When an access token nears expiry (`refreshMarginMs`, default 60 seconds), `resolveRequestCredential` and account-detail queries run a `refresh_token` exchange inside the record store's cross-process lock with single-flight deduplication. An `invalid_grant` answer expires the credential and broadcasts `deepseek-account/session-expired`; a grant without a refresh token expires the same way once stale.
 
 ### Account details
 

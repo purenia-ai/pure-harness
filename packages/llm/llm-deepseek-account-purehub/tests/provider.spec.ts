@@ -57,7 +57,12 @@ async function host(origin: string, token: () => string | undefined = () => 'fix
   contexts.push(ctx)
   await ctx.plugin(LlmRuntime)
   ctx.provide('deepseekAccount', {
-    resolveToken: (url: string) => Promise.resolve(new URL(url).origin === origin ? token() : undefined),
+    resolveRequestCredential: (url: string) => {
+      const value = new URL(url).origin === origin ? token() : undefined
+      return Promise.resolve(value === undefined ? undefined : {
+        headers: { 'x-dsh-auth-token': value }, revoked: new AbortController().signal, reject: () => Promise.resolve(),
+      })
+    },
   } as DeepSeekAccount)
   return ctx
 }
