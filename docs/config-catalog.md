@@ -2158,7 +2158,7 @@ export interface Config extends Omit<ProtocolConfig, 'models'>, ModelListingConf
 
 ## `@deepseek-ai/dsh-llm-deepseek-account-purehub`
 
-- `inject`: `llm`
+- `inject`: `llm` · `deepseekAuth`
 - `refs`: [`DeepSeekCatalogModel`](../packages/llm/llm-deepseek/src/index.ts) · [`ModelOverride`](../packages/llm/llm-deepseek/src/index.ts) · [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
 - `source`: [`packages/llm/llm-deepseek-account-purehub/src/config.ts:46`](../packages/llm/llm-deepseek-account-purehub/src/config.ts)
 

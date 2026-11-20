@@ -3,6 +3,7 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type { Context } from '@deepseek-ai/cordis'
 import { ACCOUNT_QUOTA_EXCEEDED_CODE, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
+import type {} from '@deepseek-ai/dsh-deepseek-auth'
 import { ACCOUNT_TOKEN_HEADER } from '@deepseek-ai/dsh-deepseek-account'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { installAccountTaskCancellation } from '@deepseek-ai/dsh-llm-deepseek-account'
@@ -14,7 +15,7 @@ import type { AccountCatalog, CatalogRefusal } from './resolve-catalog.ts'
 
 export { Config } from './config.ts'
 export const name = 'llm-deepseek-account-purehub'
-export const inject = ['llm']
+export const inject = ['llm', 'deepseekAuth']
 
 const PROVIDER = 'deepseek-account'
 /** Header carrying the account token on Messages, Files, and model-listing requests. */
@@ -49,6 +50,10 @@ export function apply(ctx: Context, config: Config): void {
     return { ...resolved, catalog: { ...resolved.catalog, url: listingEndpoint(resolved.protocol.baseURL) } }
   }
   settings()
+  // Publish the account connection other consumers resolve credentials through; the gateway this route
+  // talks to is the account deployment.
+  ctx.effect(() => ctx.deepseekAuth.connect('account', PROVIDER, () => ({ baseURL: settings().protocol.baseURL })),
+    'llm-deepseek-account-purehub: account connection')
   // A sign-out ends the running Agents whose latest request used this route.
   installAccountTaskCancellation(ctx, PROVIDER)
   /** Headers carrying one account token for the route's configured scheme. */

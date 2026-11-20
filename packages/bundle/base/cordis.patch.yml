@@ -554,6 +554,9 @@
       name: '@deepseek-ai/dsh-web-search-deepseek'
       config:
         apiKeyEnv: DEEPSEEK_API_KEY
+        # Auxiliary search posts to this deployment's gateway, not the official endpoint.
+        baseURL: 'https://hub.puresnake.com/v1'
+        model: 'deepseek-flash'
 
     - id: web-deepseek-api
       name: '@deepseek-ai/dsh-web-deepseek-api'

@@ -529,7 +529,7 @@ export class OidcAccount extends DeepSeekAccount {
   /** One released credential for `token`, invalidated only while it is still the stored grant. */
   private credentialFor(token: string, revoked: AbortSignal): AccountRequestCredential {
     return {
-      headers: { [ACCOUNT_TOKEN_HEADER]: token },
+      headers: { [ACCOUNT_TOKEN_HEADER]: token, authorization: `Bearer ${token}` },
       revoked,
       reject: async () => {
         const lifetime = this.oidcDetailsLifetime

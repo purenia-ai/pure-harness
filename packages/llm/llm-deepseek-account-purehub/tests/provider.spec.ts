@@ -4,6 +4,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import { afterEach, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import LlmRuntime from '@deepseek-ai/dsh-llm'
+import DeepSeekAuth from '@deepseek-ai/dsh-deepseek-auth'
 import type { DeepSeekCatalogModel } from '@deepseek-ai/dsh-llm-deepseek'
 import type { DeepSeekAccount } from '@deepseek-ai/dsh-deepseek-account'
 import * as Account from '../src/index.ts'
@@ -56,11 +57,12 @@ async function host(origin: string, token: () => string | undefined = () => 'fix
   const ctx = new Context()
   contexts.push(ctx)
   await ctx.plugin(LlmRuntime)
+  await ctx.plugin(DeepSeekAuth)
   ctx.provide('deepseekAccount', {
     resolveRequestCredential: (url: string) => {
       const value = new URL(url).origin === origin ? token() : undefined
       return Promise.resolve(value === undefined ? undefined : {
-        headers: { 'x-dsh-auth-token': value }, revoked: new AbortController().signal, reject: () => Promise.resolve(),
+        headers: { 'x-dsh-auth-token': value, authorization: `Bearer ${value}` }, revoked: new AbortController().signal, reject: () => Promise.resolve(),
       })
     },
   } as DeepSeekAccount)
@@ -127,6 +129,20 @@ it('registers the configurable provider directory entry for the account route', 
     ['deepseek-account', 'PureHub', 'llm-deepseek-account-purehub'],
   ])
   expect(ctx.llm.listProviders().map(row => [row.id, row.name])).toEqual([['deepseek-account', 'PureHub']])
+})
+
+it('publishes the account connection other consumers release credentials through', async () => {
+  const server = await gateway(json({ object: 'list', data: LISTING }))
+  const ctx = await host(server.origin)
+  await ctx.plugin(Account, route({ baseURL: server.baseURL, models: DECLARED }))
+  expect(ctx.deepseekAuth.routeKind('deepseek-account')).toBe('account')
+  const released = await ctx.deepseekAuth.authorize({
+    consumer: 'web-search-deepseek', accepts: ['account'], billing: 'auto', route: 'deepseek-account',
+    destination: { url: server.origin + '/v1/messages' },
+  })
+  // Auxiliary search sends this header record verbatim; the gateway authenticates the Bearer form.
+  expect(released?.headers.authorization).toBe('Bearer fixture-account-token')
+  expect(released?.headers['x-dsh-auth-token']).toBe('fixture-account-token')
 })
 
 it('rejects an invalid declared model at load', async () => {
