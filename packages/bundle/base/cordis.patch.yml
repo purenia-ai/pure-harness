@@ -548,9 +548,9 @@
     - id: web
       name: '@deepseek-ai/dsh-web'
       config:
-        fetchProvider: http
         # One direct Search/Fetch API request per operation, served by this deployment's gateway.
         searchProvider: deepseek-search-api
+        fetchProvider: deepseek-fetch-api
 
     - id: web-search-deepseek
       name: '@deepseek-ai/dsh-web-search-deepseek'
