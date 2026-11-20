@@ -52,6 +52,11 @@ function searchResponse() {
 afterEach(() => { vi.unstubAllGlobals() })
 
 describe('mapSearchResponse', () => {
+  it('maps a result that carries a summary without a display excerpt', () => {
+    expect(mapSearchResponse({ results: [{ url: 'https://a.test', title: 'A', summary: 'long summary', date: null }] }))
+      .toEqual({ sources: [{ url: 'https://a.test', title: 'A', summary: 'long summary' }], truncated: false })
+  })
+
   it('maps source titles, snippets, summaries and nullable dates in provider order', () => {
     expect(mapSearchResponse(searchResponse())).toEqual({ sources: [
       { url: 'https://a.test', title: 'A', snippet: 'excerpt for A', summary: 'longer summary for A', publishedAt: '2026-02-02T16:00:00+00:00' },

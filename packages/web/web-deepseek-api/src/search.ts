@@ -49,13 +49,14 @@ export function mapSearchResponse(response: unknown): WebSearchResult {
   if (!isRecord(response) || !Array.isArray(response.results)) throw invalidResponse()
   const sources = response.results.map((item: unknown) => {
     if (!isRecord(item) || typeof item.url !== 'string' || item.url.length === 0
-      || typeof item.title !== 'string' || typeof item.snippet !== 'string'
+      || typeof item.title !== 'string'
+      || (item.snippet !== undefined && typeof item.snippet !== 'string')
       || (item.summary !== undefined && typeof item.summary !== 'string')
       || (item.date !== null && typeof item.date !== 'string')) throw invalidResponse()
     return {
       url: item.url,
       ...item.title.length > 0 ? { title: item.title } : {},
-      ...item.snippet.length > 0 ? { snippet: item.snippet } : {},
+      ...typeof item.snippet === 'string' && item.snippet.length > 0 ? { snippet: item.snippet } : {},
       ...typeof item.summary === 'string' && item.summary.length > 0 ? { summary: item.summary } : {},
       ...item.date !== null && item.date.length > 0 ? { publishedAt: item.date } : {},
     }
