@@ -42,6 +42,9 @@ export const RETIRED_BUNDLES: ReadonlySet<string> = new Set([
   // This fork's base composition mounts the plugin market rows directly; a
   // profile that selected the bundle must not double-mount them.
   '@deepseek-ai/dsh-experimental-plugin-market-bundle',
+  // The Web composition mounts personalized recommendations itself
+  // ([upgrade guide](../../../../docs/upgrade-guide/v0.2.2-rc.5/personalized-recommendations-bundle-retired/guide.md)).
+  '@deepseek-ai/dsh-personalized-recommendations',
 ])
 
 /** The bundle list a `dsh plugin` init uses for a name with no shipped template. */
@@ -56,7 +59,6 @@ export const DEFAULT_PROFILE_BUNDLES: readonly string[] = ['@deepseek-ai/dsh-bas
  * [admission](../../../../.agents/notes/implemented/architecture/2026-09-21-experimental-capabilities-as-optional-bundles.md)).
  */
 export const OPTIONAL_BUNDLES: readonly string[] = [
-  '@deepseek-ai/dsh-personalized-recommendations',
   '@deepseek-ai/dsh-cua-bundle',
   '@deepseek-ai/dsh-cua-mcp',
   '@deepseek-ai/dsh-timeline',

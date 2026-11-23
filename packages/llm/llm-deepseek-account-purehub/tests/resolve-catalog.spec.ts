@@ -1,6 +1,6 @@
 /** Fork catalog resolution: the listing decides availability, the prefix map decides the owning route. */
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_REQUEST_IMAGE_MAX_BYTES, parseModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import { DEFAULT_REQUEST_IMAGE_TARGET_BYTES, parseModelListing, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import type { DeepSeekCatalogModel, ModelOverride } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions } from '../src/config.ts'
 import { resolveAccountCatalog } from '../src/resolve-catalog.ts'
@@ -57,7 +57,7 @@ describe('with a listing', () => {
     expect(catalog.offered[0]).toMatchObject({
       id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', contextWindow: 1_048_576, maxTokens: 256_000,
       inputModalities: ['text', 'image'], systemPromptUpdate: 'in-history', toolUpdate: 'addition-only',
-      imageMaxBytes: DEFAULT_REQUEST_IMAGE_MAX_BYTES,
+      imageTargetBytes: DEFAULT_REQUEST_IMAGE_TARGET_BYTES,
     })
   })
 
